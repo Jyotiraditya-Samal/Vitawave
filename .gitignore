@@ -1,0 +1,11 @@
+build/
+*.vpk
+*.velf
+*.self
+*.o
+*.a
+*.elf
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
