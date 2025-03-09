@@ -18,6 +18,8 @@ set(VITA_VERSION  "00.90")
 
 add_executable(VitaWave
   src/main.c
+  src/file_browser.c
+  src/ui.c
 )
 
 target_include_directories(VitaWave PRIVATE include)
