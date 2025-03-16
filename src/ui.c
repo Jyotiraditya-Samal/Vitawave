@@ -89,6 +89,6 @@ void ui_render(UIState *ui, FileList *browser)
         if (count == 0)
             vita2d_pgf_draw_text(s_font, 20, 100, COLOR_DIM, 0.8f, "No files found.");
 
-        vita2d_pgf_draw_text(s_font, 20, 530, COLOR_DIM, 0.7f, "X: open  O: back");
+        vita2d_pgf_draw_text(s_font, 20, 530, COLOR_DIM, 0.7f, "X: open  O: back  START: menu");
     }
 }
