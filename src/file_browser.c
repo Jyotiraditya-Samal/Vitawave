@@ -134,7 +134,7 @@ int file_browser_navigate_into(FileList *list, const char *fullpath)
 int file_browser_navigate_up(FileList *list)
 {
     if (!list) return -1;
-    if (strlen(list->parent_dir) == 0) return -1;
+    if (!list->parent_dir[0]) return -1;
     if (strcmp(list->current_dir, MUSIC_ROOT) == 0) return -1;
     return file_browser_scan_dir(list, list->parent_dir);
 }
