@@ -20,6 +20,7 @@ add_executable(VitaWave
   src/main.c
   src/file_browser.c
   src/ui.c
+  src/audio_engine.c
 )
 
 target_include_directories(VitaWave PRIVATE include)
@@ -29,6 +30,8 @@ target_link_libraries(VitaWave
   SceDisplay_stub
   SceCtrl_stub
   SceAudio_stub
+  SceAudioOut_stub
+  SceAppMgr_stub
   SceSysmodule_stub
   SceGxm_stub
   SceCommonDialog_stub
