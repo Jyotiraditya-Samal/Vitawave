@@ -3,6 +3,7 @@
 
 #include <stdbool.h>
 #include "file_browser.h"
+#include "audio_engine.h"
 
 typedef enum {
     UI_SCREEN_BROWSER = 0,
@@ -10,14 +11,16 @@ typedef enum {
 } UIScreen;
 
 typedef struct {
-    UIScreen current_screen;
-    int      selected;
-    int      list_offset;
+    UIScreen   current_screen;
+    UIScreen   prev_screen;
+    int        selected;
+    int        list_offset;
+    int        anim_frame;
 } UIState;
 
 int  ui_init(UIState *ui);
 void ui_destroy(UIState *ui);
-void ui_handle_input(UIState *ui, FileList *browser);
-void ui_render(UIState *ui, FileList *browser);
+void ui_handle_input(UIState *ui, AudioEngine *engine, FileList *browser);
+void ui_render(UIState *ui, AudioEngine *engine, FileList *browser);
 
 #endif
