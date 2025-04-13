@@ -48,6 +48,7 @@ static int audio_thread_func(SceSize args, void *argp)
             continue;
         }
 
+        /* zero-fill remainder to avoid crackling */
         if (frames < GRANULE_SIZE)
             memset(out_buf + frames * 2, 0, (GRANULE_SIZE - frames) * 2 * sizeof(int16_t));
 
