@@ -158,3 +158,4 @@ void audio_engine_set_volume(AudioEngine *e, int volume)
 uint64_t audio_engine_get_position(const AudioEngine *e) { return e ? e->position_ms : 0; }
 uint64_t audio_engine_get_duration(const AudioEngine *e) { return e ? e->duration_ms : 0; }
 PlaybackState audio_engine_get_state(const AudioEngine *e) { return e ? e->state : PLAYBACK_STOPPED; }
+
