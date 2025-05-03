@@ -115,7 +115,8 @@ void ui_render(UIState *ui, AudioEngine *engine, FileList *browser)
         vita2d_pgf_draw_text(s_font, 20, 530, COLOR_DIM, 0.7f, "X: play/open  O: back");
     }
     else if (ui->current_screen == UI_SCREEN_NOW_PLAYING) {
-        vita2d_pgf_draw_text(s_font, 20, 40, COLOR_DIM, 0.8f, "Now Playing");
+        vita2d_draw_rectangle(0, 0, 960, 50, RGBA8(0x2c, 0x2c, 0x2e, 0xff));
+        vita2d_pgf_draw_text(s_font, 20, 40, COLOR_TEXT, 0.9f, "Now Playing");
 
         /* track name */
         const char *track = engine->current_track;
