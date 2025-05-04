@@ -126,7 +126,8 @@ void ui_render(UIState *ui, AudioEngine *engine, FileList *browser)
 
         /* state */
         const char *state_str = (engine->state == PLAYBACK_PAUSED) ? "PAUSED" : "PLAYING";
-        vita2d_pgf_draw_text(s_font, 20, 140, COLOR_DIM, 0.8f, state_str);
+        unsigned int state_col = (engine->state == PLAYBACK_PAUSED) ? COLOR_DIM : RGBA8(0x30, 0xd1, 0x58, 0xff);
+        vita2d_pgf_draw_text(s_font, 20, 140, state_col, 0.8f, state_str);
 
         /* progress bar */
         draw_progress(engine, 20, 480, 920, 8);
