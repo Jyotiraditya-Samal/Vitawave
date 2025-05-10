@@ -132,6 +132,12 @@ void ui_render(UIState *ui, AudioEngine *engine, FileList *browser)
         /* progress bar */
         draw_progress(engine, 20, 480, 920, 8);
 
+        char timebuf[64];
+        uint64_t pos_s = audio_engine_get_position(engine) / 1000;
+        uint64_t dur_s = audio_engine_get_duration(engine) / 1000;
+        snprintf(timebuf, sizeof(timebuf), "%02llu:%02llu / %02llu:%02llu",
+                 pos_s / 60, pos_s % 60, dur_s / 60, dur_s % 60);
+        vita2d_pgf_draw_text(s_font, 20, 465, COLOR_DIM, 0.75f, timebuf);
         vita2d_pgf_draw_text(s_font, 20, 530, COLOR_DIM, 0.7f, "X: pause  O: back  L/R: volume");
     }
 }
