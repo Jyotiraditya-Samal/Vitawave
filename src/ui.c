@@ -64,7 +64,7 @@ void ui_handle_input(UIState *ui, AudioEngine *engine, FileList *browser)
             ui->current_screen = ui->prev_screen;
             ui->selected       = 0;
         }
-        /* Volume */
+        /* Volume control */
         if (pad.buttons & SCE_CTRL_LTRIGGER) {
             int v = engine->volume - 512;
             audio_engine_set_volume(engine, v < 0 ? 0 : v);
@@ -141,3 +141,4 @@ void ui_render(UIState *ui, AudioEngine *engine, FileList *browser)
         vita2d_pgf_draw_text(s_font, 20, 530, COLOR_DIM, 0.7f, "X: pause  O: back  L/R: volume");
     }
 }
+/* volume display added */
