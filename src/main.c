@@ -36,7 +36,7 @@ int main(void)
         /* auto advance when track ends */
         if (g_engine.auto_advance) {
             g_engine.auto_advance = false;
-            /* TODO: proper next track */
+            audio_engine_stop(&g_engine); /* will add next track logic with playlist */
         }
 
         ui_handle_input(&ui, &g_engine, browser);
