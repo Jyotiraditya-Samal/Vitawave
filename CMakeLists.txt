@@ -22,6 +22,7 @@ add_executable(VitaWave
   src/ui.c
   src/audio_engine.c
   src/decoder_mp3.c
+  src/metadata.c
 )
 
 target_include_directories(VitaWave PRIVATE include)
