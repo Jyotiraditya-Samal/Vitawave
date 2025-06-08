@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include "file_browser.h"
 #include "audio_engine.h"
+#include "metadata.h"
 
 typedef enum {
     UI_SCREEN_BROWSER = 0,
@@ -11,11 +12,12 @@ typedef enum {
 } UIScreen;
 
 typedef struct {
-    UIScreen   current_screen;
-    UIScreen   prev_screen;
-    int        selected;
-    int        list_offset;
-    int        anim_frame;
+    UIScreen      current_screen;
+    UIScreen      prev_screen;
+    int           selected;
+    int           list_offset;
+    int           anim_frame;
+    TrackMetadata current_meta;
 } UIState;
 
 int  ui_init(UIState *ui);

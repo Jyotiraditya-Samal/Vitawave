@@ -6,6 +6,7 @@
 #include "ui.h"
 #include "file_browser.h"
 #include "audio_engine.h"
+#include "metadata.h"
 
 #define COLOR_TEXT      RGBA8(0xff, 0xff, 0xff, 0xff)
 #define COLOR_SELECTED  RGBA8(0x3a, 0x3a, 0x3c, 0xff)
@@ -26,6 +27,7 @@ int ui_init(UIState *ui)
 void ui_destroy(UIState *ui)
 {
     (void)ui;
+    metadata_free(&ui->current_meta);
     if (s_font) vita2d_free_pgf(s_font);
     s_font = NULL;
 }
@@ -53,6 +55,8 @@ void ui_handle_input(UIState *ui, AudioEngine *engine, FileList *browser)
                 ui->selected = 0; ui->list_offset = 0;
             } else {
                 audio_engine_play(engine, e->path);
+                metadata_free(&ui->current_meta);
+                metadata_load(&ui->current_meta, e->path);
                 ui->prev_screen    = UI_SCREEN_BROWSER;
                 ui->current_screen = UI_SCREEN_NOW_PLAYING;
             }
@@ -118,16 +122,18 @@ void ui_render(UIState *ui, AudioEngine *engine, FileList *browser)
         vita2d_draw_rectangle(0, 0, 960, 50, RGBA8(0x2c, 0x2c, 0x2e, 0xff));
         vita2d_pgf_draw_text(s_font, 20, 40, COLOR_TEXT, 0.9f, "Now Playing");
 
-        /* track name */
-        const char *track = engine->current_track;
-        const char *slash = strrchr(track, '/');
-        if (slash) track = slash + 1;
-        vita2d_pgf_draw_text(s_font, 20, 100, COLOR_TEXT, 1.0f, track);
+        /* title and artist from metadata */
+        TrackMetadata *meta = &ui->current_meta;
+        const char *title  = meta->title[0]  ? meta->title  : engine->current_track;
+        const char *artist = meta->artist[0] ? meta->artist : "Unknown Artist";
+
+        vita2d_pgf_draw_text(s_font, 20, 110, COLOR_TEXT,  1.0f, title);
+        vita2d_pgf_draw_text(s_font, 20, 145, COLOR_DIM,   0.85f, artist);
 
         /* state */
         const char *state_str = (engine->state == PLAYBACK_PAUSED) ? "PAUSED" : "PLAYING";
         unsigned int state_col = (engine->state == PLAYBACK_PAUSED) ? COLOR_DIM : RGBA8(0x30, 0xd1, 0x58, 0xff);
-        vita2d_pgf_draw_text(s_font, 20, 140, state_col, 0.8f, state_str);
+        vita2d_pgf_draw_text(s_font, 20, 175, state_col, 0.8f, state_str);
 
         /* progress bar */
         draw_progress(engine, 20, 480, 920, 8);
@@ -141,4 +147,3 @@ void ui_render(UIState *ui, AudioEngine *engine, FileList *browser)
         vita2d_pgf_draw_text(s_font, 20, 530, COLOR_DIM, 0.7f, "X: pause  O: back  L/R: volume");
     }
 }
-/* volume display added */
