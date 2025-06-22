@@ -23,6 +23,7 @@ add_executable(VitaWave
   src/audio_engine.c
   src/decoder_mp3.c
   src/decoder_flac.c
+  src/decoder_ogg.c
   src/metadata.c
 )
 
@@ -39,6 +40,9 @@ target_link_libraries(VitaWave
   SceGxm_stub
   SceCommonDialog_stub
   mpg123
+  vorbisfile
+  vorbis
+  ogg
   freetype
   png
   jpeg

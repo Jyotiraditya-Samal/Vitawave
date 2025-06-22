@@ -42,5 +42,6 @@ DecoderState decoder_get_state(Decoder *dec);
 /* format-specific entry points */
 Decoder *decoder_mp3_open(const char *filepath);
 Decoder *decoder_flac_open(const char *filepath);
+Decoder *decoder_ogg_open(const char *filepath);
 
 #endif

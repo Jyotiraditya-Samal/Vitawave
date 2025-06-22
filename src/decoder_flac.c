@@ -68,7 +68,8 @@ Decoder *decoder_open(const char *filepath)
     Decoder *d = decoder_mp3_open(filepath);
     if (d) return d;
     d = decoder_flac_open(filepath);
-    return d;
+    if (d) return d;
+    return decoder_ogg_open(filepath);
 }
 
 void decoder_close(Decoder *dec)
