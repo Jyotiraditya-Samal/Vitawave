@@ -32,9 +32,12 @@ static int ogg_decode(void *priv, int16_t *out, uint32_t frames, uint32_t *got,
         filled += (uint32_t)ret;
     }
 
-    /* upmix mono */
-    *got = filled / (2 * sizeof(int16_t));
-    if (p->channels == 1 && *got > 0) {
+    /* upmix mono — must use current section's channel count, not the cached one,
+     * as it can change on chapter/chained stream boundaries */
+    vorbis_info *vi = ov_info(&p->vf, -1);
+    uint32_t cur_ch = (vi && vi->channels > 0) ? (uint32_t)vi->channels : p->channels;
+    *got = filled / (cur_ch * sizeof(int16_t));
+    if (cur_ch == 1 && *got > 0) {
         for (int i = (int)*got - 1; i >= 0; i--) {
             out[i*2+1] = out[i];
             out[i*2]   = out[i];
