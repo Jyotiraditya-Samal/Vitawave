@@ -5,10 +5,12 @@
 #include "file_browser.h"
 #include "audio_engine.h"
 #include "metadata.h"
+#include "playlist.h"
 
 typedef enum {
     UI_SCREEN_BROWSER = 0,
     UI_SCREEN_NOW_PLAYING,
+    UI_SCREEN_PLAYLIST,
 } UIScreen;
 
 typedef struct {
@@ -18,6 +20,7 @@ typedef struct {
     int           list_offset;
     int           anim_frame;
     TrackMetadata current_meta;
+    Playlist     *playlist;
 } UIState;
 
 int  ui_init(UIState *ui);

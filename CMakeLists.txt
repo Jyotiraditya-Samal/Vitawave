@@ -25,6 +25,7 @@ add_executable(VitaWave
   src/decoder_flac.c
   src/decoder_ogg.c
   src/metadata.c
+  src/playlist.c
 )
 
 target_include_directories(VitaWave PRIVATE include)
