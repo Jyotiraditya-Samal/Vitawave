@@ -12,6 +12,7 @@
 #define COLOR_SELECTED  RGBA8(0x3a, 0x3a, 0x3c, 0xff)
 #define COLOR_DIM       RGBA8(0x8e, 0x8e, 0x93, 0xff)
 #define COLOR_ACCENT    RGBA8(0xfc, 0x3c, 0x44, 0xff)
+#define COLOR_CURRENT   RGBA8(0x30, 0xd1, 0x58, 0xff)
 
 static vita2d_pgf *s_font = NULL;
 static SceCtrlData s_old_pad;
@@ -26,7 +27,6 @@ int ui_init(UIState *ui)
 
 void ui_destroy(UIState *ui)
 {
-    (void)ui;
     metadata_free(&ui->current_meta);
     if (s_font) vita2d_free_pgf(s_font);
     s_font = NULL;
@@ -63,12 +63,19 @@ void ui_handle_input(UIState *ui, AudioEngine *engine, FileList *browser)
         }
     }
     else if (ui->current_screen == UI_SCREEN_NOW_PLAYING) {
-        if (pressed.buttons & SCE_CTRL_CROSS)  audio_engine_pause(engine);
+        if (pressed.buttons & SCE_CTRL_CROSS)    audio_engine_pause(engine);
+        if (pressed.buttons & SCE_CTRL_TRIANGLE && ui->playlist)
+        {
+            ui->prev_screen    = UI_SCREEN_NOW_PLAYING;
+            ui->current_screen = UI_SCREEN_PLAYLIST;
+            /* scroll to current track */
+            if (ui->playlist->current >= 0)
+                ui->list_offset = ui->playlist->current > 5 ? ui->playlist->current - 5 : 0;
+        }
         if (pressed.buttons & SCE_CTRL_CIRCLE) {
             ui->current_screen = ui->prev_screen;
             ui->selected       = 0;
         }
-        /* Volume control */
         if (pad.buttons & SCE_CTRL_LTRIGGER) {
             int v = engine->volume - 512;
             audio_engine_set_volume(engine, v < 0 ? 0 : v);
@@ -76,6 +83,15 @@ void ui_handle_input(UIState *ui, AudioEngine *engine, FileList *browser)
         if (pad.buttons & SCE_CTRL_RTRIGGER) {
             int v = engine->volume + 512;
             audio_engine_set_volume(engine, v > MAX_VOLUME ? MAX_VOLUME : v);
+        }
+    }
+    else if (ui->current_screen == UI_SCREEN_PLAYLIST) {
+        Playlist *pl = ui->playlist;
+        if (!pl) return;
+        if (pressed.buttons & SCE_CTRL_DOWN && ui->selected < pl->count - 1) ui->selected++;
+        if (pressed.buttons & SCE_CTRL_UP   && ui->selected > 0)             ui->selected--;
+        if (pressed.buttons & SCE_CTRL_CIRCLE) {
+            ui->current_screen = ui->prev_screen;
         }
     }
 }
@@ -122,7 +138,6 @@ void ui_render(UIState *ui, AudioEngine *engine, FileList *browser)
         vita2d_draw_rectangle(0, 0, 960, 50, RGBA8(0x2c, 0x2c, 0x2e, 0xff));
         vita2d_pgf_draw_text(s_font, 20, 40, COLOR_TEXT, 0.9f, "Now Playing");
 
-        /* title and artist from metadata */
         TrackMetadata *meta = &ui->current_meta;
         const char *title  = meta->title[0]  ? meta->title  : engine->current_track;
         const char *artist = meta->artist[0] ? meta->artist : "Unknown Artist";
@@ -130,12 +145,10 @@ void ui_render(UIState *ui, AudioEngine *engine, FileList *browser)
         vita2d_pgf_draw_text(s_font, 20, 110, COLOR_TEXT,  1.0f, title);
         vita2d_pgf_draw_text(s_font, 20, 145, COLOR_DIM,   0.85f, artist);
 
-        /* state */
         const char *state_str = (engine->state == PLAYBACK_PAUSED) ? "PAUSED" : "PLAYING";
-        unsigned int state_col = (engine->state == PLAYBACK_PAUSED) ? COLOR_DIM : RGBA8(0x30, 0xd1, 0x58, 0xff);
+        unsigned int state_col = (engine->state == PLAYBACK_PAUSED) ? COLOR_DIM : COLOR_CURRENT;
         vita2d_pgf_draw_text(s_font, 20, 175, state_col, 0.8f, state_str);
 
-        /* progress bar */
         draw_progress(engine, 20, 480, 920, 8);
 
         char timebuf[64];
@@ -144,6 +157,29 @@ void ui_render(UIState *ui, AudioEngine *engine, FileList *browser)
         snprintf(timebuf, sizeof(timebuf), "%02llu:%02llu / %02llu:%02llu",
                  pos_s / 60, pos_s % 60, dur_s / 60, dur_s % 60);
         vita2d_pgf_draw_text(s_font, 20, 465, COLOR_DIM, 0.75f, timebuf);
-        vita2d_pgf_draw_text(s_font, 20, 530, COLOR_DIM, 0.7f, "X: pause  O: back  L/R: volume");
+        vita2d_pgf_draw_text(s_font, 20, 530, COLOR_DIM, 0.7f,
+                             "X: pause  O: back  T: queue  L/R: vol");
+    }
+    else if (ui->current_screen == UI_SCREEN_PLAYLIST) {
+        vita2d_draw_rectangle(0, 0, 960, 50, RGBA8(0x2c, 0x2c, 0x2e, 0xff));
+        vita2d_pgf_draw_text(s_font, 20, 40, COLOR_TEXT, 0.9f, "Queue");
+
+        Playlist *pl = ui->playlist;
+        if (!pl) return;
+
+        int visible = 15;
+        if (ui->selected >= ui->list_offset + visible) ui->list_offset = ui->selected - visible + 1;
+        if (ui->selected < ui->list_offset) ui->list_offset = ui->selected;
+
+        for (int i = ui->list_offset; i < pl->count && i < ui->list_offset + visible; i++) {
+            int y = 60 + (i - ui->list_offset) * 30;
+            if (i == ui->selected)
+                vita2d_draw_rectangle(0, y - 20, 960, 28, COLOR_SELECTED);
+            unsigned int col = (i == pl->current) ? COLOR_ACCENT : COLOR_TEXT;
+            vita2d_pgf_draw_text(s_font, 20, y, col, 0.8f, pl->entries[i].name);
+        }
+        if (pl->count == 0)
+            vita2d_pgf_draw_text(s_font, 20, 100, COLOR_DIM, 0.8f, "Queue is empty.");
+        vita2d_pgf_draw_text(s_font, 20, 530, COLOR_DIM, 0.7f, "O: back");
     }
 }
