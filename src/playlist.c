@@ -45,3 +45,9 @@ const char *playlist_prev(Playlist *pl)
     if (pl->current > 0) pl->current--;
     return playlist_get_current(pl);
 }
+
+void playlist_set(Playlist *pl, int index)
+{
+    if (!pl || index < 0 || index >= pl->count) return;
+    pl->current = index;
+}

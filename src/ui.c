@@ -93,6 +93,18 @@ void ui_handle_input(UIState *ui, AudioEngine *engine, FileList *browser)
         if (pressed.buttons & SCE_CTRL_CIRCLE) {
             ui->current_screen = ui->prev_screen;
         }
+        /* cross in queue: jump to that track */
+        if (pressed.buttons & SCE_CTRL_CROSS && ui->playlist && ui->selected < ui->playlist->count) {
+            playlist_set(ui->playlist, ui->selected);
+            const char *path = playlist_get_current(ui->playlist);
+            if (path) {
+                audio_engine_play(engine, path);
+                metadata_free(&ui->current_meta);
+                metadata_load(&ui->current_meta, path);
+                ui->prev_screen    = UI_SCREEN_PLAYLIST;
+                ui->current_screen = UI_SCREEN_NOW_PLAYING;
+            }
+        }
     }
 }
 

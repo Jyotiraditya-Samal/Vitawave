@@ -26,3 +26,4 @@ const char *playlist_next(Playlist *pl);
 const char *playlist_prev(Playlist *pl);
 
 #endif
+void playlist_set(Playlist *pl, int index);
