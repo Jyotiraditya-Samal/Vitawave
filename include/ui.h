@@ -21,6 +21,7 @@ typedef struct {
     int           anim_frame;
     TrackMetadata current_meta;
     Playlist     *playlist;
+    bool          fill_playlist_request; /* set when user plays a file from browser */
 } UIState;
 
 int  ui_init(UIState *ui);

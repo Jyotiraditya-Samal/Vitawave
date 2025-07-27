@@ -15,6 +15,17 @@
 static AudioEngine  g_engine;
 static Playlist     g_playlist;
 
+/* populate playlist from directory entries in the browser */
+static void fill_playlist_from_dir(FileList *browser)
+{
+    playlist_clear(&g_playlist);
+    for (int i = 0; i < browser->count; i++) {
+        FileEntry *e = &browser->entries[i];
+        if (!e->is_directory)
+            playlist_add(&g_playlist, e->path);
+    }
+}
+
 int main(void)
 {
     vita2d_init();
@@ -22,9 +33,7 @@ int main(void)
     sceCtrlSetSamplingMode(SCE_CTRL_MODE_ANALOG_WIDE);
 
     memset(&g_engine,   0, sizeof(g_engine));
-    memset(&g_playlist, 0, sizeof(g_playlist));
     playlist_init(&g_playlist);
-
     audio_engine_init(&g_engine);
 
     FileList *browser = file_browser_init();
@@ -53,6 +62,12 @@ int main(void)
         }
 
         ui_handle_input(&ui, &g_engine, browser);
+
+        /* when user plays a file, fill playlist from its directory */
+        if (ui.fill_playlist_request) {
+            ui.fill_playlist_request = false;
+            fill_playlist_from_dir(browser);
+        }
 
         vita2d_start_drawing();
         vita2d_clear_screen();

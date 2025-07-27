@@ -57,6 +57,7 @@ void ui_handle_input(UIState *ui, AudioEngine *engine, FileList *browser)
                 audio_engine_play(engine, e->path);
                 metadata_free(&ui->current_meta);
                 metadata_load(&ui->current_meta, e->path);
+                ui->fill_playlist_request = true;
                 ui->prev_screen    = UI_SCREEN_BROWSER;
                 ui->current_screen = UI_SCREEN_NOW_PLAYING;
             }
