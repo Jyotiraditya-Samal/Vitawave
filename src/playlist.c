@@ -51,3 +51,16 @@ void playlist_set(Playlist *pl, int index)
     if (!pl || index < 0 || index >= pl->count) return;
     pl->current = index;
 }
+
+static int entry_cmp(const void *a, const void *b)
+{
+    const PlaylistEntry *ea = (const PlaylistEntry *)a;
+    const PlaylistEntry *eb = (const PlaylistEntry *)b;
+    return strcasecmp(ea->name, eb->name);
+}
+
+void playlist_sort(Playlist *pl)
+{
+    if (!pl || pl->count < 2) return;
+    qsort(pl->entries, pl->count, sizeof(PlaylistEntry), entry_cmp);
+}

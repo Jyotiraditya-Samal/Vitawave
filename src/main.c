@@ -24,6 +24,7 @@ static void fill_playlist_from_dir(FileList *browser)
         if (!e->is_directory)
             playlist_add(&g_playlist, e->path);
     }
+    playlist_sort(&g_playlist);
 }
 
 int main(void)
