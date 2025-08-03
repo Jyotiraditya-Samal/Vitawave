@@ -2,6 +2,7 @@
 #define UI_H
 
 #include <stdbool.h>
+#include <vita2d.h>
 #include "file_browser.h"
 #include "audio_engine.h"
 #include "metadata.h"
@@ -11,17 +12,19 @@ typedef enum {
     UI_SCREEN_BROWSER = 0,
     UI_SCREEN_NOW_PLAYING,
     UI_SCREEN_PLAYLIST,
+    UI_SCREEN_SETTINGS,
 } UIScreen;
 
 typedef struct {
-    UIScreen      current_screen;
-    UIScreen      prev_screen;
-    int           selected;
-    int           list_offset;
-    int           anim_frame;
-    TrackMetadata current_meta;
-    Playlist     *playlist;
-    bool          fill_playlist_request; /* set when user plays a file from browser */
+    UIScreen         current_screen;
+    UIScreen         prev_screen;
+    int              selected;
+    int              list_offset;
+    int              anim_frame;
+    TrackMetadata    current_meta;
+    vita2d_texture  *album_art_tex;
+    Playlist        *playlist;
+    bool             fill_playlist_request;
 } UIState;
 
 int  ui_init(UIState *ui);
