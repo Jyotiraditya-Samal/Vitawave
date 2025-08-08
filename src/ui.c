@@ -28,6 +28,7 @@ int ui_init(UIState *ui)
 void ui_destroy(UIState *ui)
 {
     metadata_free(&ui->current_meta);
+    if (ui->album_art_tex) { vita2d_free_texture(ui->album_art_tex); ui->album_art_tex = NULL; }
     if (s_font) vita2d_free_pgf(s_font);
     s_font = NULL;
 }
@@ -57,6 +58,11 @@ void ui_handle_input(UIState *ui, AudioEngine *engine, FileList *browser)
                 audio_engine_play(engine, e->path);
                 metadata_free(&ui->current_meta);
                 metadata_load(&ui->current_meta, e->path);
+                if (ui->album_art_tex) {
+                    vita2d_free_texture(ui->album_art_tex);
+                    ui->album_art_tex = NULL;
+                }
+                ui->album_art_tex = metadata_get_album_art_texture(&ui->current_meta);
                 ui->fill_playlist_request = true;
                 ui->prev_screen    = UI_SCREEN_BROWSER;
                 ui->current_screen = UI_SCREEN_NOW_PLAYING;
@@ -150,6 +156,16 @@ void ui_render(UIState *ui, AudioEngine *engine, FileList *browser)
     else if (ui->current_screen == UI_SCREEN_NOW_PLAYING) {
         vita2d_draw_rectangle(0, 0, 960, 50, RGBA8(0x2c, 0x2c, 0x2e, 0xff));
         vita2d_pgf_draw_text(s_font, 20, 40, COLOR_TEXT, 0.9f, "Now Playing");
+
+        /* album art */
+        int art_x = 380, art_y = 70, art_size = 200;
+        if (ui->album_art_tex) {
+            float sw = (float)art_size / vita2d_texture_get_width(ui->album_art_tex);
+            float sh = (float)art_size / vita2d_texture_get_height(ui->album_art_tex);
+            vita2d_draw_texture_scale(ui->album_art_tex, art_x, art_y, sw, sh);
+        } else {
+            vita2d_draw_rectangle(art_x, art_y, art_size, art_size, RGBA8(0x2c, 0x2c, 0x2e, 0xff));
+        }
 
         TrackMetadata *meta = &ui->current_meta;
         const char *title  = meta->title[0]  ? meta->title  : engine->current_track;
