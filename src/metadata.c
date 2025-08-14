@@ -75,13 +75,14 @@ int metadata_load(TrackMetadata *meta, const char *filepath)
         strncpy(meta->title, slash ? slash + 1 : filepath, 255);
     }
 
-    /* try folder cover art if no embedded art */
+    /* try folder cover art if no embedded art.
+     * vita FAT32 fs is case-insensitive so cover.jpg matches Cover.JPG etc. */
     if (!meta->album_art.loaded) {
         char cover[512];
         const char *slash = strrchr(filepath, '/');
         size_t dir_len = slash ? (size_t)(slash - filepath + 1) : 0;
-        const char *covers[] = { "cover.jpg", "cover.jpeg", "cover.png" };
-        for (int i = 0; i < 3 && !meta->album_art.loaded; i++) {
+        const char *covers[] = { "cover.jpg", "cover.jpeg", "cover.png", "folder.jpg" };
+        for (int i = 0; i < 4 && !meta->album_art.loaded; i++) {
             snprintf(cover, sizeof(cover), "%.*s%s", (int)dir_len, filepath, covers[i]);
             FILE *cf = fopen(cover, "rb");
             if (!cf) continue;
