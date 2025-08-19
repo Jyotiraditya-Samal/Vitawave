@@ -49,6 +49,10 @@ void ui_handle_input(UIState *ui, AudioEngine *engine, FileList *browser)
             file_browser_navigate_up(browser);
             ui->selected = 0; ui->list_offset = 0;
         }
+        if (pressed.buttons & SCE_CTRL_SELECT) {
+            ui->prev_screen    = UI_SCREEN_BROWSER;
+            ui->current_screen = UI_SCREEN_SETTINGS;
+        }
         if (pressed.buttons & SCE_CTRL_CROSS && browser && ui->selected < count) {
             FileEntry *e = &browser->entries[ui->selected];
             if (e->is_directory) {
@@ -111,6 +115,19 @@ void ui_handle_input(UIState *ui, AudioEngine *engine, FileList *browser)
                 ui->prev_screen    = UI_SCREEN_PLAYLIST;
                 ui->current_screen = UI_SCREEN_NOW_PLAYING;
             }
+        }
+    }
+    else if (ui->current_screen == UI_SCREEN_SETTINGS) {
+        if (pressed.buttons & SCE_CTRL_CIRCLE) {
+            ui->current_screen = ui->prev_screen;
+        }
+        if (pad.buttons & SCE_CTRL_LTRIGGER) {
+            int v = engine->volume - 512;
+            audio_engine_set_volume(engine, v < 0 ? 0 : v);
+        }
+        if (pad.buttons & SCE_CTRL_RTRIGGER) {
+            int v = engine->volume + 512;
+            audio_engine_set_volume(engine, v > MAX_VOLUME ? MAX_VOLUME : v);
         }
     }
 }
@@ -210,5 +227,24 @@ void ui_render(UIState *ui, AudioEngine *engine, FileList *browser)
         if (pl->count == 0)
             vita2d_pgf_draw_text(s_font, 20, 100, COLOR_DIM, 0.8f, "Queue is empty.");
         vita2d_pgf_draw_text(s_font, 20, 530, COLOR_DIM, 0.7f, "O: back");
+    }
+    else if (ui->current_screen == UI_SCREEN_SETTINGS) {
+        vita2d_draw_rectangle(0, 0, 960, 50, RGBA8(0x2c, 0x2c, 0x2e, 0xff));
+        vita2d_pgf_draw_text(s_font, 20, 40, COLOR_TEXT, 0.9f, "Settings");
+
+        /* volume bar */
+        vita2d_pgf_draw_text(s_font, 20, 100, COLOR_TEXT, 0.85f, "Volume");
+        int vol_w = (int)(600.0f * engine->volume / MAX_VOLUME);
+        vita2d_draw_rectangle(20, 115, 600, 12, RGBA8(0x3a, 0x3a, 0x3c, 0xff));
+        vita2d_draw_rectangle(20, 115, vol_w, 12, COLOR_ACCENT);
+
+        char vbuf[32];
+        snprintf(vbuf, sizeof(vbuf), "%d%%", (int)(100.0f * engine->volume / MAX_VOLUME));
+        vita2d_pgf_draw_text(s_font, 640, 126, COLOR_DIM, 0.75f, vbuf);
+
+        /* about */
+        vita2d_pgf_draw_text(s_font, 20, 200, COLOR_DIM, 0.75f, "VitaWave v0.9 - PS Vita Music Player");
+
+        vita2d_pgf_draw_text(s_font, 20, 530, COLOR_DIM, 0.7f, "O: back  L/R: volume");
     }
 }
