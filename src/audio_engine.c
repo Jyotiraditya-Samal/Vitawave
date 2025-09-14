@@ -9,6 +9,7 @@
 
 #include "audio_engine.h"
 #include "decoder.h"
+#include "equalizer.h"
 
 #define GRANULE_SIZE 960
 
@@ -51,6 +52,10 @@ static int audio_thread_func(SceSize args, void *argp)
         /* zero-fill remainder to avoid crackling */
         if (frames < GRANULE_SIZE)
             memset(out_buf + frames * 2, 0, (GRANULE_SIZE - frames) * 2 * sizeof(int16_t));
+
+        /* apply EQ if enabled */
+        if (e->eq && e->eq->enabled)
+            eq_process(e->eq, out_buf, frames);
 
         uint32_t sr = (e->decoder && e->decoder->info.sample_rate > 0)
                       ? e->decoder->info.sample_rate : 44100;

@@ -17,6 +17,8 @@ typedef enum {
     PLAYBACK_PAUSED,
 } PlaybackState;
 
+struct Equalizer; /* forward decl */
+
 typedef struct {
     int              port;
     int              port_sample_rate;
@@ -30,6 +32,7 @@ typedef struct {
     volatile bool    thread_exit;
     volatile bool    auto_advance;
     SceUID           mutex;
+    struct Equalizer *eq; /* optional, set by main.c after EQ init */
 } AudioEngine;
 
 int           audio_engine_init(AudioEngine *engine);
