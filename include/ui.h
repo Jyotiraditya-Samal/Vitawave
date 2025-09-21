@@ -7,12 +7,14 @@
 #include "audio_engine.h"
 #include "metadata.h"
 #include "playlist.h"
+#include "equalizer.h"
 
 typedef enum {
     UI_SCREEN_BROWSER = 0,
     UI_SCREEN_NOW_PLAYING,
     UI_SCREEN_PLAYLIST,
     UI_SCREEN_SETTINGS,
+    UI_SCREEN_EQUALIZER,
 } UIScreen;
 
 typedef struct {
@@ -25,6 +27,8 @@ typedef struct {
     vita2d_texture  *album_art_tex;
     Playlist        *playlist;
     bool             fill_playlist_request;
+    Equalizer       *eq;
+    int              eq_selected_slider; /* 0=preamp, 1-10=band */
 } UIState;
 
 int  ui_init(UIState *ui);
