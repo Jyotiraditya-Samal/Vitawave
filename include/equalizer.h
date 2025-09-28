@@ -30,3 +30,15 @@ void eq_update_coefficients(Equalizer *eq, uint32_t sample_rate);
 void eq_process(Equalizer *eq, int16_t *buf, uint32_t frames);
 
 #endif
+
+#define EQ_PRESET_COUNT 5
+
+typedef struct {
+    const char *name;
+    float       gains[EQ_BANDS];
+    float       preamp;
+} EQPreset;
+
+extern const EQPreset k_eq_presets[EQ_PRESET_COUNT];
+
+void eq_load_preset(Equalizer *eq, int preset_idx, uint32_t sample_rate);

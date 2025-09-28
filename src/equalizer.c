@@ -70,3 +70,20 @@ void eq_process(Equalizer *eq, int16_t *buf, uint32_t frames)
         buf[i] = (int16_t)v;
     }
 }
+
+const EQPreset k_eq_presets[EQ_PRESET_COUNT] = {
+    { "Flat",       { 0,0,0,0,0,0,0,0,0,0 },     0.0f },
+    { "Bass Boost", { 7,5,3,1,0,0,0,0,0,0 },     -3.0f },
+    { "Treble",     { 0,0,0,0,0,0,2,4,6,7 },     -3.0f },
+    { "Rock",       { 4,3,0,-1,0,1,3,4,4,3 },    -2.0f },
+    { "Pop",        { -1,0,2,3,3,0,-1,-1,0,0 },   0.0f },
+};
+
+void eq_load_preset(Equalizer *eq, int idx, uint32_t sample_rate)
+{
+    if (!eq || idx < 0 || idx >= EQ_PRESET_COUNT) return;
+    const EQPreset *p = &k_eq_presets[idx];
+    for (int i = 0; i < EQ_BANDS; i++) eq->gains[i] = p->gains[i];
+    eq->preamp = p->preamp;
+    eq_update_coefficients(eq, sample_rate);
+}
