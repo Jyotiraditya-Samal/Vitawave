@@ -38,6 +38,44 @@ void eq_update_coefficients(Equalizer *eq, uint32_t sample_rate)
     for (int i = 0; i < EQ_BANDS; i++)
         compute_peaking(&eq->bands[i], (float)k_eq_freqs[i],
                         eq->gains[i], Q, (float)sample_rate);
+
+    /* analytical gain compensation: sweep frequencies and find worst-case gain,
+     * then scale down preamp to ensure we never exceed 0 dBFS */
+    float max_gain = 0.0f;
+    float sr = (float)sample_rate;
+    for (int k = 0; k < 512; k++) {
+        float f  = 20.0f * powf(1000.0f, (float)k / 511.0f);
+        float w  = 2.0f * 3.14159265f * f / sr;
+        float re = 1.0f, im = 0.0f;
+        for (int b = 0; b < EQ_BANDS; b++) {
+            BiquadFilter *bf = &eq->bands[b];
+            /* evaluate H(e^jw) = (b0 + b1*e^-jw + b2*e^-j2w) /
+             *                    (1  + a1*e^-jw + a2*e^-j2w)  */
+            float c = cosf(w), s = sinf(w);
+            float c2 = cosf(2*w), s2 = sinf(2*w);
+            float nr = bf->b0 + bf->b1*c  + bf->b2*c2;
+            float ni = -bf->b1*s - bf->b2*s2;
+            float dr = 1.0f  + bf->a1*c  + bf->a2*c2;
+            float di = -bf->a1*s - bf->a2*s2;
+            float denom = dr*dr + di*di;
+            float outr = (nr*dr + ni*di) / denom;
+            float outi = (ni*dr - nr*di) / denom;
+            float tmp_re = re*outr - im*outi;
+            float tmp_im = re*outi + im*outr;
+            re = tmp_re; im = tmp_im;
+        }
+        float mag = sqrtf(re*re + im*im);
+        if (mag > max_gain) max_gain = mag;
+    }
+    /* store output_gain so eq_process can apply it */
+    float preamp_lin = powf(10.0f, eq->preamp / 20.0f);
+    if (max_gain > 0.0f) {
+        float limit = preamp_lin / max_gain;
+        if (limit < preamp_lin) eq->output_gain = limit;
+        else                    eq->output_gain = preamp_lin;
+    } else {
+        eq->output_gain = preamp_lin;
+    }
 }
 
 void eq_set_gain(Equalizer *eq, int band, float db)
@@ -52,10 +90,12 @@ void eq_process(Equalizer *eq, int16_t *buf, uint32_t frames)
 {
     if (!eq || !eq->enabled || !buf) return;
 
-    float preamp_lin = powf(10.0f, eq->preamp / 20.0f);
+    /* use pre-computed output_gain (includes gain compensation) */
+    float gain = (eq->output_gain > 0.0f) ? eq->output_gain
+                                          : powf(10.0f, eq->preamp / 20.0f);
 
     for (uint32_t i = 0; i < frames * 2; i++) {
-        float s = buf[i] * preamp_lin;
+        float s = buf[i] * gain;
         for (int b = 0; b < EQ_BANDS; b++) {
             BiquadFilter *f = &eq->bands[b];
             float out = f->b0 * s + f->z1;
