@@ -39,5 +39,7 @@ void eq_set_preamp(Equalizer *eq, float db);
 void eq_update_coefficients(Equalizer *eq, uint32_t sample_rate);
 void eq_process(Equalizer *eq, int16_t *buf, uint32_t frames);
 void eq_load_preset(Equalizer *eq, int preset_idx, uint32_t sample_rate);
+void eq_save(const Equalizer *eq, const char *path);
+int  eq_load(Equalizer *eq, const char *path, uint32_t sample_rate);
 
 #endif

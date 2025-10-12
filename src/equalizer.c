@@ -127,3 +127,39 @@ void eq_load_preset(Equalizer *eq, int idx, uint32_t sample_rate)
     eq->preamp = p->preamp;
     eq_update_coefficients(eq, sample_rate);
 }
+
+/* simple binary save/load — just dump the gains and enabled flag */
+#pragma pack(push, 1)
+typedef struct { uint32_t magic; float gains[EQ_BANDS]; float preamp; uint8_t enabled; } EQFile;
+#pragma pack(pop)
+#define EQ_MAGIC 0x56574551 /* VWEQ */
+
+void eq_save(const Equalizer *eq, const char *path)
+{
+    if (!eq || !path) return;
+    FILE *f = fopen(path, "wb");
+    if (!f) return;
+    EQFile ef;
+    ef.magic   = EQ_MAGIC;
+    ef.preamp  = eq->preamp;
+    ef.enabled = eq->enabled ? 1 : 0;
+    for (int i = 0; i < EQ_BANDS; i++) ef.gains[i] = eq->gains[i];
+    fwrite(&ef, sizeof(ef), 1, f);
+    fclose(f);
+}
+
+int eq_load(Equalizer *eq, const char *path, uint32_t sample_rate)
+{
+    if (!eq || !path) return -1;
+    FILE *f = fopen(path, "rb");
+    if (!f) return -1;
+    EQFile ef;
+    int ok = (fread(&ef, sizeof(ef), 1, f) == 1 && ef.magic == EQ_MAGIC);
+    fclose(f);
+    if (!ok) return -1;
+    eq->preamp  = ef.preamp;
+    eq->enabled = ef.enabled != 0;
+    for (int i = 0; i < EQ_BANDS; i++) eq->gains[i] = ef.gains[i];
+    eq_update_coefficients(eq, sample_rate);
+    return 0;
+}
