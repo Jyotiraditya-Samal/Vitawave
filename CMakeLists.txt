@@ -26,6 +26,8 @@ add_executable(VitaWave
   src/decoder_ogg.c
   src/metadata.c
   src/equalizer.c
+  src/kiss_fft.c
+  src/visualizer.c
   src/playlist.c
 )
 
