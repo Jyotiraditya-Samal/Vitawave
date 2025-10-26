@@ -8,6 +8,7 @@
 #include "metadata.h"
 #include "playlist.h"
 #include "equalizer.h"
+#include "visualizer.h"
 
 typedef enum {
     UI_SCREEN_BROWSER = 0,
@@ -15,6 +16,7 @@ typedef enum {
     UI_SCREEN_PLAYLIST,
     UI_SCREEN_SETTINGS,
     UI_SCREEN_EQUALIZER,
+    UI_SCREEN_VISUALIZER,
 } UIScreen;
 
 typedef struct {
@@ -28,7 +30,8 @@ typedef struct {
     Playlist        *playlist;
     bool             fill_playlist_request;
     Equalizer       *eq;
-    int              eq_selected_slider; /* 0=preamp, 1-10=band */
+    int              eq_selected_slider;
+    Visualizer      *visualizer;
 } UIState;
 
 int  ui_init(UIState *ui);

@@ -74,7 +74,11 @@ void ui_handle_input(UIState *ui, AudioEngine *engine, FileList *browser)
         }
     }
     else if (ui->current_screen == UI_SCREEN_NOW_PLAYING) {
-        if (pressed.buttons & SCE_CTRL_CROSS)    audio_engine_pause(engine);
+        if (pressed.buttons & SCE_CTRL_CROSS)  audio_engine_pause(engine);
+        if (pressed.buttons & SCE_CTRL_SQUARE) {
+            ui->prev_screen    = UI_SCREEN_NOW_PLAYING;
+            ui->current_screen = UI_SCREEN_VISUALIZER;
+        }
         if (pressed.buttons & SCE_CTRL_TRIANGLE && ui->playlist)
         {
             ui->prev_screen    = UI_SCREEN_NOW_PLAYING;
@@ -164,6 +168,10 @@ void ui_handle_input(UIState *ui, AudioEngine *engine, FileList *browser)
                 }
             }
         }
+    }
+    else if (ui->current_screen == UI_SCREEN_VISUALIZER) {
+        if (pressed.buttons & SCE_CTRL_CIRCLE)
+            ui->current_screen = ui->prev_screen;
     }
 }
 
@@ -334,5 +342,17 @@ void ui_render(UIState *ui, AudioEngine *engine, FileList *browser)
 
         vita2d_pgf_draw_text(s_font, 20, 530, COLOR_DIM, 0.7f,
                              "L/R: select  U/D: adjust  T: on/off  O: back");
+    }
+    else if (ui->current_screen == UI_SCREEN_VISUALIZER) {
+        /* full-screen visualizer */
+        vita2d_draw_rectangle(0, 0, 960, 544, RGBA8(0x00, 0x00, 0x00, 0xff));
+
+        if (ui->visualizer)
+            vis_render(ui->visualizer, 20, 80, 920, 400);
+
+        TrackMetadata *meta = &ui->current_meta;
+        const char *title  = meta->title[0]  ? meta->title  : engine->current_track;
+        vita2d_pgf_draw_text(s_font, 20, 50, COLOR_TEXT, 0.9f, title);
+        vita2d_pgf_draw_text(s_font, 20, 530, COLOR_DIM, 0.7f, "O: back");
     }
 }
