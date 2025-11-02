@@ -32,7 +32,8 @@ typedef struct {
     volatile bool    thread_exit;
     volatile bool    auto_advance;
     SceUID           mutex;
-    struct Equalizer *eq; /* optional, set by main.c after EQ init */
+    struct Equalizer   *eq;  /* optional, set by main.c after EQ init */
+    struct Visualizer  *vis; /* optional, set by main.c */
 } AudioEngine;
 
 int           audio_engine_init(AudioEngine *engine);
