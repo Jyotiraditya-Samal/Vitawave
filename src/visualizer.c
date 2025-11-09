@@ -47,8 +47,18 @@ void vis_feed(Visualizer *v, const int16_t *samples, uint32_t frames)
         if (db < 0.0f) db = 0.0f;
         if (db > 60.0f) db = 60.0f;
         float target = db / 60.0f;
-        /* smooth */
-        v->bar_heights[b] = v->bar_heights[b] * 0.7f + target * 0.3f;
+        /* smooth with faster attack, slower decay */
+        if (target > v->bar_heights[b])
+            v->bar_heights[b] = v->bar_heights[b] * 0.4f + target * 0.6f;
+        else
+            v->bar_heights[b] = v->bar_heights[b] * 0.85f + target * 0.15f;
+
+        /* update falling peak markers */
+        if (v->bar_heights[b] > v->bar_peaks[b])
+            v->bar_peaks[b] = v->bar_heights[b];
+        else
+            v->bar_peaks[b] -= 0.008f;
+        if (v->bar_peaks[b] < 0.0f) v->bar_peaks[b] = 0.0f;
     }
 }
 
@@ -62,5 +72,9 @@ void vis_render(Visualizer *v, int x, int y, int w, int h)
         int bh = (int)(v->bar_heights[b] * h);
         if (bh < 2) bh = 2;
         vita2d_draw_rectangle(bx, y + h - bh, bar_w, bh, RGBA8(0xfc, 0x3c, 0x44, 0xff));
+        /* peak marker */
+        int ph = (int)(v->bar_peaks[b] * h);
+        if (ph > 2)
+            vita2d_draw_rectangle(bx, y + h - ph - 2, bar_w, 2, RGBA8(0xff, 0xff, 0xff, 0xaa));
     }
 }
