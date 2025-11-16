@@ -187,6 +187,38 @@ static void draw_progress(AudioEngine *engine, int x, int y, int w, int h)
     }
 }
 
+/* marquee scroll for long text -- active=true scrolls, false just clips */
+static void draw_text_scroll(UIState *ui, int x, int y, int max_w,
+                             unsigned int color, float size,
+                             const char *text, bool active)
+{
+    int text_w = vita2d_pgf_text_width(s_font, size, text);
+    if (text_w <= max_w) {
+        vita2d_pgf_draw_text(s_font, x, y, color, size, text);
+        return;
+    }
+    if (!active) {
+        vita2d_enable_clipping();
+        vita2d_set_clip_rectangle(x, y - 30, x + max_w, y + 10);
+        vita2d_pgf_draw_text(s_font, x, y, color, size, text);
+        vita2d_disable_clipping();
+        return;
+    }
+    /* scroll: 90-frame pause, then 1px per 2 frames */
+    int scroll = 0;
+    if (ui->anim_frame > 90) {
+        scroll = (ui->anim_frame - 90) / 2;
+        int wrap_w = text_w + 60;
+        scroll = scroll % wrap_w;
+    }
+    vita2d_enable_clipping();
+    vita2d_set_clip_rectangle(x, y - 30, x + max_w, y + 10);
+    vita2d_pgf_draw_text(s_font, x - scroll, y, color, size, text);
+    if (scroll > 0)
+        vita2d_pgf_draw_text(s_font, x - scroll + text_w + 60, y, color, size, text);
+    vita2d_disable_clipping();
+}
+
 void ui_render(UIState *ui, AudioEngine *engine, FileList *browser)
 {
     ui->anim_frame++;
@@ -231,8 +263,8 @@ void ui_render(UIState *ui, AudioEngine *engine, FileList *browser)
         const char *title  = meta->title[0]  ? meta->title  : engine->current_track;
         const char *artist = meta->artist[0] ? meta->artist : "Unknown Artist";
 
-        vita2d_pgf_draw_text(s_font, 20, 110, COLOR_TEXT,  1.0f, title);
-        vita2d_pgf_draw_text(s_font, 20, 145, COLOR_DIM,   0.85f, artist);
+        draw_text_scroll(ui, 20, 110, 340, COLOR_TEXT,  1.0f, title,  true);
+        draw_text_scroll(ui, 20, 145, 340, COLOR_DIM,   0.85f, artist, true);
 
         const char *state_str = (engine->state == PLAYBACK_PAUSED) ? "PAUSED" : "PLAYING";
         unsigned int state_col = (engine->state == PLAYBACK_PAUSED) ? COLOR_DIM : COLOR_CURRENT;
