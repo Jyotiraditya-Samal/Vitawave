@@ -28,3 +28,9 @@ const char *playlist_prev(Playlist *pl);
 #endif
 void playlist_set(Playlist *pl, int index);
 void playlist_sort(Playlist *pl);
+
+#define PLAYLIST_NAME_LEN 64
+
+/* save/load named playlist as M3U */
+int  playlist_save_m3u(const Playlist *pl, const char *path);
+int  playlist_load_m3u(Playlist *pl, const char *path);

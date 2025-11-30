@@ -64,3 +64,52 @@ void playlist_sort(Playlist *pl)
     if (!pl || pl->count < 2) return;
     qsort(pl->entries, pl->count, sizeof(PlaylistEntry), entry_cmp);
 }
+
+/* named playlist: add a name field - note this extends existing struct via the header */
+int playlist_save_m3u(const Playlist *pl, const char *path)
+{
+    if (!pl || !path) return -1;
+    FILE *f = fopen(path, "w");
+    if (!f) return -1;
+    fprintf(f, "#EXTM3U\n");
+    for (int i = 0; i < pl->count; i++) {
+        fprintf(f, "#EXTINF:-1,%s\n%s\n",
+                pl->entries[i].name, pl->entries[i].path);
+    }
+    fclose(f);
+    return 0;
+}
+
+int playlist_load_m3u(Playlist *pl, const char *path)
+{
+    if (!pl || !path) return -1;
+    FILE *f = fopen(path, "r");
+    if (!f) return -1;
+    playlist_clear(pl);
+    char line[PLAYLIST_PATH_LEN];
+    char pending_name[256] = {0};
+    while (fgets(line, sizeof(line), f)) {
+        /* strip newline */
+        line[strcspn(line, "\r\n")] = '\0';
+        if (line[0] == '#') {
+            if (strncmp(line, "#EXTINF:", 8) == 0) {
+                char *comma = strchr(line, ',');
+                if (comma) strncpy(pending_name, comma + 1, 255);
+            }
+            continue;
+        }
+        if (line[0] == '\0') continue;
+        if (pl->count >= PLAYLIST_MAX_ENTRIES) break;
+        strncpy(pl->entries[pl->count].path, line, PLAYLIST_PATH_LEN - 1);
+        if (pending_name[0]) {
+            strncpy(pl->entries[pl->count].name, pending_name, 255);
+            pending_name[0] = '\0';
+        } else {
+            const char *slash = strrchr(line, '/');
+            strncpy(pl->entries[pl->count].name, slash ? slash + 1 : line, 255);
+        }
+        pl->count++;
+    }
+    fclose(f);
+    return 0;
+}
