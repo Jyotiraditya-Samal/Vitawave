@@ -34,3 +34,15 @@ void playlist_sort(Playlist *pl);
 /* save/load named playlist as M3U */
 int  playlist_save_m3u(const Playlist *pl, const char *path);
 int  playlist_load_m3u(Playlist *pl, const char *path);
+
+#define PLAYLIST_MANAGER_MAX 32
+
+typedef struct {
+    Playlist  playlists[PLAYLIST_MANAGER_MAX];
+    int       count;
+    char      names[PLAYLIST_MANAGER_MAX][PLAYLIST_NAME_LEN];
+} PlaylistManager;
+
+void playlist_manager_init(PlaylistManager *mgr);
+int  playlist_manager_load_all(PlaylistManager *mgr, const char *dir);
+int  playlist_manager_save(PlaylistManager *mgr, int idx, const char *dir);
