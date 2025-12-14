@@ -34,6 +34,8 @@ typedef struct {
     SceUID           mutex;
     struct Equalizer   *eq;  /* optional, set by main.c after EQ init */
     struct Visualizer  *vis; /* optional, set by main.c */
+    uint32_t            crossfade_ms; /* 0 = disabled */
+    volatile bool       track_changed; /* set by crossfade thread, read by UI */
 } AudioEngine;
 
 int           audio_engine_init(AudioEngine *engine);
