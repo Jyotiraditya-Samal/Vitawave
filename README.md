@@ -4,12 +4,25 @@ A music player homebrew for the PS Vita.
 
 ## Features
 
-- Browse music files on `ux0:music/`
-- Supports MP3, FLAC, OGG Vorbis
-- Now Playing screen with album art, title, and artist from tags
-- Playback queue built from current folder
-- Skip tracks with D-pad up/down
+- Browse music on `ux0:music/`, supports MP3, FLAC, OGG Vorbis
+- Album art from ID3 tags or `cover.jpg` in folder
+- 10-band parametric equalizer with presets
+- Spectrum visualizer (FFT)
+- Playlist queue, auto-advance, skip with D-pad
+- Named playlists saved as M3U files
+- Theme support: load color palette from INI file
 - Settings screen with volume control
+
+## Navigation
+
+| Button | Action |
+|--------|--------|
+| Cross  | Play / Pause |
+| Circle | Back |
+| Triangle | Open queue |
+| Square | Open visualizer |
+| L/R triggers | Volume |
+| Select | Settings |
 
 ## Building
 
@@ -25,4 +38,4 @@ Install `VitaWave.vpk` via VitaShell.
 
 ## Status
 
-Beta. Things may crash. Let me know if you find issues.
+Beta. Themes, EQ, and visualizer are mostly working.
