@@ -27,6 +27,7 @@ add_executable(VitaWave
   src/metadata.c
   src/equalizer.c
   src/theme.c
+  src/media_db.c
   src/kiss_fft.c
   src/visualizer.c
   src/playlist.c
