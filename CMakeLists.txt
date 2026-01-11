@@ -25,15 +25,20 @@ add_executable(VitaWave
   src/decoder_flac.c
   src/decoder_ogg.c
   src/metadata.c
+  src/playlist.c
   src/equalizer.c
-  src/theme.c
-  src/media_db.c
   src/kiss_fft.c
   src/visualizer.c
-  src/playlist.c
+  src/theme.c
+  src/media_db.c
+  src/vita_sqlite.c
+  sqlite/sqlite3.c
 )
 
-target_include_directories(VitaWave PRIVATE include)
+set_source_files_properties(sqlite/sqlite3.c PROPERTIES COMPILE_FLAGS
+  "-DSQLITE_OS_OTHER=1 -DSQLITE_THREADSAFE=0 -DSQLITE_TEMP_STORE=3")
+
+target_include_directories(VitaWave PRIVATE include sqlite)
 
 target_link_libraries(VitaWave
   vita2d
@@ -42,6 +47,7 @@ target_link_libraries(VitaWave
   SceAudio_stub
   SceAudioOut_stub
   SceAppMgr_stub
+  SceAppUtil_stub
   SceSysmodule_stub
   SceGxm_stub
   SceCommonDialog_stub
