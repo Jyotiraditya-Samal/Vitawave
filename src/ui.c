@@ -249,14 +249,30 @@ void ui_render(UIState *ui, AudioEngine *engine, FileList *browser)
         vita2d_draw_rectangle(0, 0, 960, 50, RGBA8(0x2c, 0x2c, 0x2e, 0xff));
         vita2d_pgf_draw_text(s_font, 20, 40, COLOR_TEXT, 0.9f, "Now Playing");
 
-        /* album art */
-        int art_x = 380, art_y = 70, art_size = 200;
+        /* album art with rounded corners */
+        int art_x = 380, art_y = 70, art_size = 200, corner_r = 12;
         if (ui->album_art_tex) {
             float sw = (float)art_size / vita2d_texture_get_width(ui->album_art_tex);
             float sh = (float)art_size / vita2d_texture_get_height(ui->album_art_tex);
             vita2d_draw_texture_scale(ui->album_art_tex, art_x, art_y, sw, sh);
         } else {
             vita2d_draw_rectangle(art_x, art_y, art_size, art_size, RGBA8(0x2c, 0x2c, 0x2e, 0xff));
+        }
+        /* rounded corner overdraw using background color */
+        {
+            unsigned int bg_col = RGBA8(0x1c, 0x1c, 0x1e, 0xff);
+            float r = (float)corner_r;
+            for (int dy = 0; dy < corner_r; dy++) {
+                int cx = (int)(r - sqrtf(r*r - (float)((corner_r - dy) * (corner_r - dy))));
+                /* top-left corner */
+                vita2d_draw_rectangle(art_x, art_y + dy, cx, 1, bg_col);
+                /* top-right corner */
+                vita2d_draw_rectangle(art_x + art_size - cx, art_y + dy, cx, 1, bg_col);
+                /* bottom-left corner */
+                vita2d_draw_rectangle(art_x, art_y + art_size - dy - 1, cx, 1, bg_col);
+                /* bottom-right corner */
+                vita2d_draw_rectangle(art_x + art_size - cx, art_y + art_size - dy - 1, cx, 1, bg_col);
+            }
         }
 
         TrackMetadata *meta = &ui->current_meta;
