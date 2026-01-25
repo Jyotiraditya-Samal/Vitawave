@@ -187,6 +187,25 @@ static void draw_progress(AudioEngine *engine, int x, int y, int w, int h)
     }
 }
 
+/* draw a colored circle with geometric symbol for button icon */
+static void draw_button_icon(int cx, int cy, char sym)
+{
+    unsigned int col;
+    switch (sym) {
+        case 'X': col = RGBA8(0x00, 0x60, 0xff, 0xff); break; /* blue cross */
+        case 'O': col = RGBA8(0xff, 0x40, 0x40, 0xff); break; /* red circle */
+        case 'T': col = RGBA8(0x00, 0xc0, 0x50, 0xff); break; /* green triangle */
+        case 'S': col = RGBA8(0xcc, 0x80, 0xff, 0xff); break; /* purple square */
+        default:  col = RGBA8(0x80, 0x80, 0x80, 0xff); break;
+    }
+    /* draw small filled circle */
+    vita2d_draw_fill_circle(cx, cy, 8, col);
+    /* draw symbol in white */
+    char s[2] = { sym, 0 };
+    vita2d_pgf_draw_text(s_font, cx - 4, cy + 5, RGBA8(0xff, 0xff, 0xff, 0xff), 0.55f, s);
+}
+(void)draw_button_icon; /* suppress unused-function warning until used */
+
 /* marquee scroll for long text -- active=true scrolls, false just clips */
 static void draw_text_scroll(UIState *ui, int x, int y, int max_w,
                              unsigned int color, float size,
