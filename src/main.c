@@ -4,6 +4,7 @@
 
 #include <psp2/kernel/processmgr.h>
 #include <psp2/ctrl.h>
+#include <psp2/shellutil.h>
 #include <vita2d.h>
 
 #include "file_browser.h"
@@ -32,6 +33,11 @@ int main(void)
     vita2d_init();
     vita2d_set_clear_color(RGBA8(0x1c, 0x1c, 0x1e, 0xff));
     sceCtrlSetSamplingMode(SCE_CTRL_MODE_ANALOG_WIDE);
+
+    /* declare ourselves as music player: keeps audio running behind screen-off
+     * and LiveArea. Do NOT lock PS_BTN — we want normal home button behavior. */
+    sceShellUtilInitEvents(0);
+    sceShellUtilLock(SCE_SHELL_UTIL_LOCK_TYPE_MUSIC_PLAYER);
 
     memset(&g_engine,   0, sizeof(g_engine));
     playlist_init(&g_playlist);

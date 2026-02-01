@@ -47,6 +47,7 @@ target_link_libraries(VitaWave
   SceAudio_stub
   SceAudioOut_stub
   SceAppMgr_stub
+  SceShellSvc_stub
   SceAppUtil_stub
   SceSysmodule_stub
   SceGxm_stub
