@@ -34,8 +34,10 @@ int main(void)
     vita2d_set_clear_color(RGBA8(0x1c, 0x1c, 0x1e, 0xff));
     sceCtrlSetSamplingMode(SCE_CTRL_MODE_ANALOG_WIDE);
 
-    /* declare ourselves as music player: keeps audio running behind screen-off
-     * and LiveArea. Do NOT lock PS_BTN — we want normal home button behavior. */
+    /* Declare ourselves as a music player — this lets the OS keep our audio
+     * threads alive when the screen turns off or the user goes to LiveArea.
+     * Only lock MUSIC_PLAYER, not PS_BTN: locking PS_BTN would prevent the
+     * user from navigating home, which is not what we want. */
     sceShellUtilInitEvents(0);
     sceShellUtilLock(SCE_SHELL_UTIL_LOCK_TYPE_MUSIC_PLAYER);
 
