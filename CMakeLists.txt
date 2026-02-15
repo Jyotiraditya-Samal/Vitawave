@@ -30,6 +30,9 @@ add_executable(VitaWave
   src/kiss_fft.c
   src/visualizer.c
   src/theme.c
+  src/font_renderer.c
+  src/noto.c
+  src/noto_compat.c
   src/media_db.c
   src/vita_sqlite.c
   sqlite/sqlite3.c
