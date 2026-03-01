@@ -33,6 +33,8 @@ add_executable(VitaWave
   src/font_renderer.c
   src/noto.c
   src/noto_compat.c
+  src/gifdec.c
+  src/vita_shims.c
   src/media_db.c
   src/vita_sqlite.c
   sqlite/sqlite3.c
