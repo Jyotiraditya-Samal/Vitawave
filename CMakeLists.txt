@@ -4,73 +4,96 @@ if(NOT DEFINED CMAKE_TOOLCHAIN_FILE)
   if(DEFINED ENV{VITASDK})
     set(CMAKE_TOOLCHAIN_FILE "$ENV{VITASDK}/share/vita.toolchain.cmake" CACHE PATH "toolchain file")
   else()
-    message(FATAL_ERROR "Please define VITASDK to point to your SDK path!")
+    message(FATAL_ERROR "Please define VITASDK to point to your VitaSDK installation")
   endif()
 endif()
 
-project(VitaWave C CXX)
-
+project(VitaWave C)
 include("${VITASDK}/share/vita.cmake" REQUIRED)
 
 set(VITA_APP_NAME "VitaWave")
-set(VITA_TITLEID  "VWAVE0001")
-set(VITA_VERSION  "00.90")
+set(VITA_TITLEID  "VWAV00001")
+set(VITA_VERSION  "01.00")
 
-add_executable(VitaWave
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -O2 -std=c99")
+
+include_directories(
+  include
+  sqlite
+  ${VITASDK}/arm-vita-eabi/include
+  ${VITASDK}/arm-vita-eabi/include/freetype2
+)
+
+set(SOURCES
   src/main.c
-  src/file_browser.c
-  src/ui.c
   src/audio_engine.c
   src/decoder_mp3.c
   src/decoder_flac.c
   src/decoder_ogg.c
+  src/file_browser.c
+  src/media_db.c
   src/metadata.c
   src/playlist.c
-  src/equalizer.c
-  src/kiss_fft.c
+  src/ui.c
   src/visualizer.c
-  src/theme.c
-  src/font_renderer.c
-  src/noto.c
-  src/noto_compat.c
-  src/gifdec.c
-  src/vita_shims.c
-  src/media_db.c
-  src/vita_sqlite.c
-  sqlite/sqlite3.c
+  src/equalizer.c
+  src/kiss_fft.c        # bundled kissfft — no external package needed
+  src/vita_shims.c      # POSIX stubs not provided by VitaSDK
+  src/vita_sqlite.c     # custom SQLite VFS using sceIo*
+  src/font_renderer.c   # custom FreeType glyph atlas renderer (point filter)
+  src/noto_compat.c     # default Noto font path list
+  src/theme.c           # Winamp-skin-style theme system
+  src/gifdec.c          # GIF decoder (FILE*-based, Vita-compatible)
+  sqlite/sqlite3.c      # bundled SQLite amalgamation
 )
 
-set_source_files_properties(sqlite/sqlite3.c PROPERTIES COMPILE_FLAGS
-  "-DSQLITE_OS_OTHER=1 -DSQLITE_THREADSAFE=0 -DSQLITE_TEMP_STORE=3")
+# SQLite flags apply ONLY to the bundled sqlite3.c, not to the rest of the app
+set_source_files_properties(sqlite/sqlite3.c PROPERTIES
+  COMPILE_FLAGS "-DSQLITE_OS_OTHER=1 -DSQLITE_TEMP_STORE=3 -DSQLITE_THREADSAFE=0 -w"
+)
 
-target_include_directories(VitaWave PRIVATE include sqlite)
+add_executable(${PROJECT_NAME} ${SOURCES})
 
-target_link_libraries(VitaWave
+target_link_libraries(${PROJECT_NAME}
   vita2d
   SceDisplay_stub
+  SceGxm_stub
   SceCtrl_stub
   SceAudio_stub
-  SceAudioOut_stub
-  SceAppMgr_stub
-  SceShellSvc_stub
-  SceAppUtil_stub
-  SceSysmodule_stub
-  SceGxm_stub
+  SceIofilemgr_stub
+  SceKernelThreadMgr_stub
+  ScePower_stub
   SceCommonDialog_stub
+  SceAppMgr_stub
+  SceAppUtil_stub
+  SceShellSvc_stub
+  SceRtc_stub
+  ScePgf_stub
+  ScePvf_stub
   mpg123
   vorbisfile
   vorbis
   ogg
-  freetype
   png
+  freetype
   jpeg
+  bz2
   z
   m
   c
 )
 
-vita_create_self(VitaWave.self VitaWave)
-vita_create_vpk(VitaWave.vpk ${VITA_TITLEID} VitaWave.self
+vita_create_self(${PROJECT_NAME}.self ${PROJECT_NAME} UNSAFE)
+
+vita_create_vpk(${PROJECT_NAME}.vpk ${VITA_TITLEID} ${PROJECT_NAME}.self
   VERSION ${VITA_VERSION}
   NAME ${VITA_APP_NAME}
+  FILE assets/icons/icon0.png    sce_sys/icon0.png
+  FILE assets/icons/bg.png       sce_sys/livearea/contents/bg.png
+  FILE assets/icons/startup.png  sce_sys/livearea/contents/startup.png
+  FILE assets/livearea/template.xml  sce_sys/livearea/contents/template.xml
+  FILE assets/fonts/NotoSans-Regular.ttf    fonts/NotoSans-Regular.ttf
+  FILE assets/fonts/NotoSansJP-Regular.ttf  fonts/NotoSansJP-Regular.ttf
+  FILE assets/fonts/NotoSansKR-Regular.ttf  fonts/NotoSansKR-Regular.ttf
+  FILE assets/fonts/NotoSansSC-Regular.ttf  fonts/NotoSansSC-Regular.ttf
 )

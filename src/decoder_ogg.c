@@ -1,80 +1,201 @@
+/*
+ * VitaWave – decoder_ogg.c
+ * Ogg/Vorbis decoding via libvorbisfile.
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
 #include <vorbis/vorbisfile.h>
 
 #include "decoder.h"
+#include "audio_engine.h"
 
+/* ── Private state ───────────────────────────────────────────────────────── */
 typedef struct {
-    OggVorbis_File vf;
-    int            section;
-    uint32_t       channels;
-} OggPriv;
+    OggVorbis_File ovf;
+    vorbis_info   *vi;
+    int            channels;
+    long           rate;
+    uint64_t       duration_ms;
+    int            current_section;
+    bool           open;
+} OggState;
 
-static void ogg_close(void *priv) {
-    OggPriv *p = (OggPriv *)priv;
-    if (p) { ov_clear(&p->vf); free(p); }
+/* ── Error code mapping ──────────────────────────────────────────────────── */
+static int map_ov_error(int err)
+{
+    switch (err) {
+        case OV_FALSE:      return -10;
+        case OV_EOF:        return  1;   /* end of stream */
+        case OV_HOLE:       return -11;  /* recoverable gap */
+        case OV_EREAD:      return -12;
+        case OV_EFAULT:     return -13;
+        case OV_EIMPL:      return -14;
+        case OV_EINVAL:     return -15;
+        case OV_ENOTVORBIS: return -16;
+        case OV_EBADHEADER: return -17;
+        case OV_EVERSION:   return -18;
+        case OV_ENOTAUDIO:  return -19;
+        case OV_EBADPACKET: return -20;
+        case OV_EBADLINK:   return -21;
+        case OV_ENOSEEK:    return -22;
+        default:            return -99;
+    }
 }
 
-static int ogg_decode(void *priv, int16_t *out, uint32_t frames, uint32_t *got,
-                      DecoderState *state)
-{
-    OggPriv *p = (OggPriv *)priv;
-    uint32_t needed = frames * 2 * sizeof(int16_t); /* stereo s16 */
-    uint32_t filled = 0;
-    unsigned char *dst = (unsigned char *)out;
+/* ── Forward declarations ────────────────────────────────────────────────── */
+static int  ogg_open        (Decoder *dec, const char *filepath);
+static void ogg_close       (Decoder *dec);
+static int  ogg_decode_frames(Decoder *dec, int16_t *out,
+                              uint32_t frames_req, uint32_t *frames_decoded);
+static int  ogg_seek        (Decoder *dec, uint64_t position_ms);
+static void ogg_reset       (Decoder *dec);
 
-    while (filled < needed) {
-        long ret = ov_read(&p->vf, (char *)(dst + filled),
-                           (int)(needed - filled), 0, 2, 1, &p->section);
-        if (ret == 0) { *state = DECODER_STATE_EOF; break; }
-        if (ret < 0)  { *state = DECODER_STATE_ERROR; break; }
-        filled += (uint32_t)ret;
+/* ── Vtable ──────────────────────────────────────────────────────────────── */
+static const DecoderVtable ogg_vtable = {
+    ogg_open,
+    ogg_close,
+    ogg_decode_frames,
+    ogg_seek,
+    ogg_reset
+};
+
+/* ── Public entry point ──────────────────────────────────────────────────── */
+int decoder_ogg_open(Decoder *dec, const char *filepath)
+{
+    return ogg_open(dec, filepath);
+}
+
+/* ── Implementation ──────────────────────────────────────────────────────── */
+
+static int ogg_open(Decoder *dec, const char *filepath)
+{
+    OggState *st = (OggState *)calloc(1, sizeof(OggState));
+    if (!st) return -1;
+
+    /* Open the Ogg/Vorbis file */
+    int err = ov_fopen(filepath, &st->ovf);
+    if (err != 0) {
+        free(st);
+        return map_ov_error(err);
+    }
+    st->open = true;
+
+    /* Get stream info (logical bitstream 0) */
+    st->vi       = ov_info(&st->ovf, -1);
+    st->channels = st->vi->channels;  /* source channels (may be 1) */
+    st->rate     = st->vi->rate;
+
+    /* Duration */
+    double dur_s = ov_time_total(&st->ovf, -1);
+    if (dur_s > 0.0) {
+        st->duration_ms = (uint64_t)(dur_s * 1000.0);
     }
 
-    /* upmix mono — must use current section's channel count, not the cached one,
-     * as it can change on chapter/chained stream boundaries */
-    vorbis_info *vi = ov_info(&p->vf, -1);
-    uint32_t cur_ch = (vi && vi->channels > 0) ? (uint32_t)vi->channels : p->channels;
-    *got = filled / (cur_ch * sizeof(int16_t));
-    if (cur_ch == 1 && *got > 0) {
-        for (int i = (int)*got - 1; i >= 0; i--) {
-            out[i*2+1] = out[i];
-            out[i*2]   = out[i];
+    /* Fill public info */
+    dec->info.sample_rate  = (uint32_t)st->rate;
+    dec->info.channels     = 2;   /* always upmix to stereo on decode */
+    dec->info.bit_depth    = 16;
+    dec->info.duration_ms  = st->duration_ms;
+    dec->info.total_frames = (uint64_t)ov_pcm_total(&st->ovf, -1);
+    dec->info.bitrate      = (uint32_t)(ov_bitrate(&st->ovf, -1) / 1000);
+
+    dec->internal = st;
+    dec->vtable   = ogg_vtable;
+    dec->state    = DECODER_STATE_OPEN;
+    return 0;
+}
+
+static void ogg_close(Decoder *dec)
+{
+    if (!dec || !dec->internal) return;
+    OggState *st = (OggState *)dec->internal;
+
+    if (st->open) {
+        ov_clear(&st->ovf);
+        st->open = false;
+    }
+    free(st);
+    dec->internal = NULL;
+    dec->state    = DECODER_STATE_IDLE;
+}
+
+static int ogg_decode_frames(Decoder *dec, int16_t *out,
+                              uint32_t frames_req, uint32_t *frames_decoded)
+{
+    if (!dec || !dec->internal || !out || !frames_decoded) return -1;
+    OggState *st    = (OggState *)dec->internal;
+    *frames_decoded = 0;
+
+    /* ov_read output parameters */
+    const int bigendianp = 0;   /* little-endian */
+    const int word       = 2;   /* 16-bit */
+    const int sgned      = 1;   /* signed */
+
+    uint32_t bytes_needed  = frames_req * (uint32_t)st->channels * 2u;
+    uint32_t bytes_written = 0;
+    char    *ptr           = (char *)out;
+
+    while (bytes_written < bytes_needed) {
+        long n = ov_read(&st->ovf,
+                         ptr + bytes_written,
+                         (int)(bytes_needed - bytes_written),
+                         bigendianp, word, sgned,
+                         &st->current_section);
+
+        if (n == 0) {
+            /* EOF */
+            dec->state = DECODER_STATE_EOF;
+            break;
+        }
+        if (n == OV_HOLE) {
+            /* Corrupt data hole – skip and continue */
+            continue;
+        }
+        if (n < 0) {
+            dec->state = DECODER_STATE_ERROR;
+            return map_ov_error((int)n);
+        }
+        bytes_written += (uint32_t)n;
+    }
+
+    uint32_t frames = bytes_written / ((uint32_t)st->channels * 2u);
+
+    /* Upmix mono to stereo in-place (iterate backwards to avoid overwrites) */
+    if (st->channels == 1 && frames > 0) {
+        int16_t *buf = (int16_t *)out;
+        for (int32_t i = (int32_t)frames - 1; i >= 0; i--) {
+            int16_t s    = buf[i];
+            buf[i*2 + 1] = s;
+            buf[i*2 + 0] = s;
         }
     }
-    return (*state == DECODER_STATE_EOF) ? 1 : 0;
+
+    *frames_decoded = frames;
+    if (*frames_decoded == 0 && dec->state == DECODER_STATE_EOF) {
+        return 1;
+    }
+    dec->state = DECODER_STATE_DECODING;
+    return 0;
 }
 
-Decoder *decoder_ogg_open(const char *filepath)
+static int ogg_seek(Decoder *dec, uint64_t position_ms)
 {
-    if (!filepath) return NULL;
-    const char *ext = strrchr(filepath, '.');
-    if (!ext || strcasecmp(ext, ".ogg") != 0) return NULL;
+    if (!dec || !dec->internal) return -1;
+    OggState *st = (OggState *)dec->internal;
 
-    OggPriv *p = (OggPriv *)calloc(1, sizeof(OggPriv));
-    if (!p) return NULL;
+    double target_s = (double)position_ms / 1000.0;
+    int err = ov_time_seek(&st->ovf, target_s);
+    if (err != 0) {
+        return map_ov_error(err);
+    }
+    dec->state = DECODER_STATE_OPEN;
+    return 0;
+}
 
-    if (ov_fopen(filepath, &p->vf) != 0) { free(p); return NULL; }
-
-    vorbis_info *vi = ov_info(&p->vf, -1);
-    if (!vi) { ov_clear(&p->vf); free(p); return NULL; }
-
-    p->channels = (uint32_t)vi->channels;
-
-    Decoder *d = (Decoder *)calloc(1, sizeof(Decoder));
-    if (!d) { ogg_close(p); return NULL; }
-
-    d->priv      = p;
-    d->close_fn  = ogg_close;
-    d->decode_fn = ogg_decode;
-    d->state     = DECODER_STATE_OPEN;
-    d->info.sample_rate = (uint32_t)vi->rate;
-    d->info.channels    = 2;
-
-    ogg_int64_t total_samples = ov_pcm_total(&p->vf, -1);
-    d->info.duration_ms = (total_samples > 0 && vi->rate > 0)
-        ? (uint64_t)total_samples * 1000ULL / vi->rate : 0;
-    strncpy(d->info.filepath, filepath, sizeof(d->info.filepath) - 1);
-    return d;
+static void ogg_reset(Decoder *dec)
+{
+    ogg_seek(dec, 0);
 }
