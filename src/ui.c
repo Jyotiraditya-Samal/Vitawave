@@ -593,7 +593,7 @@ void ui_handle_input(UIState *ui,
 
     /* ── SETTINGS ─────────────────────────────────────────────────────── */
     case UI_SCREEN_SETTINGS: {
-        const int NUM_SETTINGS = 6;
+        const int NUM_SETTINGS = 7;
         if (nav_pressed & SCE_CTRL_UP) {
             if (ui->settings.settings_selected > 0)
                 ui->settings.settings_selected--;
@@ -634,6 +634,9 @@ void ui_handle_input(UIState *ui,
                         theme_manager_select(ui->theme_mgr, ui, ui->settings_theme_preview);
                         theme_manager_save(ui->theme_mgr);
                     }
+                    break;
+                case 6:
+                    ((UIState *)ui)->request_exit = true;
                     break;
             }
             ui_settings_save(ui, engine);
@@ -2146,8 +2149,9 @@ void ui_draw_settings(const UIState *ui)
         { "Equalizer" },
         { "Reactive GIF Background" },
         { "Theme" },
+        { "Exit VitaWave" },
     };
-    int num_rows = 6;
+    int num_rows = 7;
 
     int sy = BAR_HEIGHT + 10;
     noto_draw_text(12, sy + 28,
@@ -2197,6 +2201,7 @@ void ui_draw_settings(const UIState *ui)
                     snprintf(val_str, sizeof(val_str), "Classic Dark");
                 }
                 break;
+            case 6: val_str[0] = '\0'; break;
             default: val_str[0] = '\0'; break;
         }
         {
@@ -2212,6 +2217,8 @@ void ui_draw_settings(const UIState *ui)
 
     if (ui->settings.settings_selected == 5)
         draw_footer(ui, "[DUD]Select  [DLR]Theme  [X]Apply  [O]Back");
+    else if (ui->settings.settings_selected == 6)
+        draw_footer(ui, "[DUD]Select  [X]Exit  [O]Back");
     else
         draw_footer(ui, "[DUD]Select  [X]Toggle  [O]Back");
 }

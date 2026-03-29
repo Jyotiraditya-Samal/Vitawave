@@ -138,6 +138,8 @@ typedef struct {
         int list_row_height;         /* px, default 30  */
         int album_art_frame_padding; /* px, default 0   */
     } layout;
+
+    bool request_exit;  /* set by Settings Exit; main loop breaks to cleanup */
 } UIState;
 
 /* ── Public API ───────────────────────────────────────────────────────────── */
