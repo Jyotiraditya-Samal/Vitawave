@@ -113,4 +113,37 @@ vita_create_vpk(${PROJECT_NAME}.vpk ${VITA_TITLEID} ${PROJECT_NAME}.self
   FILE assets/fonts/NotoSansJP-Regular.ttf  fonts/NotoSansJP-Regular.ttf
   FILE assets/fonts/NotoSansKR-Regular.ttf  fonts/NotoSansKR-Regular.ttf
   FILE assets/fonts/NotoSansSC-Regular.ttf  fonts/NotoSansSC-Regular.ttf
+  # ── Bundled themes ──────────────────────────────────────────────────────
+  FILE themes/classic-light/theme.ini                       themes/classic-light/theme.ini
+  FILE themes/damask/theme.ini                              themes/damask/theme.ini
+  FILE themes/damask/bg_default.png                         themes/damask/bg_default.png
+  FILE themes/damask/bg_now_playing.png                     themes/damask/bg_now_playing.png
+  FILE themes/damask/bg_settings.png                        themes/damask/bg_settings.png
+  FILE themes/damask/font.ttf                               themes/damask/font.ttf
+  FILE themes/halcyon/theme.ini                             themes/halcyon/theme.ini
+  FILE themes/halcyon/bg_default.png                        themes/halcyon/bg_default.png
+  FILE themes/halcyon/font.ttf                              themes/halcyon/font.ttf
+  FILE themes/lazuli/theme.ini                              themes/lazuli/theme.ini
+  FILE themes/lazuli/bg_default.png                         themes/lazuli/bg_default.png
+  FILE themes/lazuli/bg_now_playing.png                     themes/lazuli/bg_now_playing.png
+  FILE themes/lazuli/bg_settings.png                        themes/lazuli/bg_settings.png
+  FILE themes/lazuli/font.ttf                               themes/lazuli/font.ttf
+  FILE themes/nexus/theme.ini                               themes/nexus/theme.ini
+  FILE themes/nexus/bg_default.png                          themes/nexus/bg_default.png
+  FILE themes/nexus/bg_now_playing.png                      themes/nexus/bg_now_playing.png
+  FILE themes/nexus/bg_settings.png                         themes/nexus/bg_settings.png
+  FILE themes/nexus/font.ttf                                themes/nexus/font.ttf
+  FILE themes/terminus/theme.ini                            themes/terminus/theme.ini
+  FILE themes/terminus/bg_default.png                       themes/terminus/bg_default.png
+  FILE themes/terminus/bg_now_playing.png                   themes/terminus/bg_now_playing.png
+  FILE themes/terminus/bg_settings.png                      themes/terminus/bg_settings.png
+  FILE themes/terminus/bg_visualizer.png                    themes/terminus/bg_visualizer.png
+  FILE themes/terminus/album_art_frame.png                  themes/terminus/album_art_frame.png
+  FILE themes/terminus/album_art_overlay.png                themes/terminus/album_art_overlay.png
+  FILE themes/terminus/thumb_progress.png                   themes/terminus/thumb_progress.png
+  FILE themes/terminus/thumb_volume.png                     themes/terminus/thumb_volume.png
+  FILE themes/terminus/font.ttf                             themes/terminus/font.ttf
+  FILE themes/voltaic/theme.ini                             themes/voltaic/theme.ini
+  FILE themes/voltaic/bg_default.png                        themes/voltaic/bg_default.png
+  FILE themes/voltaic/font.ttf                              themes/voltaic/font.ttf
 )
