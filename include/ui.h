@@ -59,7 +59,6 @@ typedef struct {
     bool crossfade;
     int  crossfade_duration;  /* seconds */
     bool equalizer_enabled;
-    bool gif_reactive;        /* GIF background reacts to music energy */
     int  settings_selected;   /* which setting row is highlighted */
 } UISettings;
 

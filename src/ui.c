@@ -38,7 +38,6 @@ typedef struct {
     int32_t  crossfade;
     int32_t  crossfade_duration;
     int32_t  equalizer_enabled;
-    int32_t  gif_reactive;
     /* AudioEngine */
     int32_t  repeat_mode;
     int32_t  shuffle;
@@ -56,7 +55,6 @@ static void ui_settings_save(const UIState *ui, const AudioEngine *engine)
     s.crossfade          = ui->settings.crossfade       ? 1 : 0;
     s.crossfade_duration = ui->settings.crossfade_duration;
     s.equalizer_enabled  = ui->settings.equalizer_enabled ? 1 : 0;
-    s.gif_reactive       = ui->settings.gif_reactive       ? 1 : 0;
     s.repeat_mode        = engine ? (int32_t)engine->repeat_mode : 0;
     s.shuffle            = engine ? (engine->shuffle    ? 1 : 0) : 0;
     fwrite(&s, sizeof(s), 1, f);
@@ -79,7 +77,6 @@ static void ui_settings_load(UIState *ui, AudioEngine *engine)
     ui->settings.crossfade           = s.crossfade          != 0;
     ui->settings.crossfade_duration  = s.crossfade_duration;
     ui->settings.equalizer_enabled   = s.equalizer_enabled  != 0;
-    ui->settings.gif_reactive        = s.gif_reactive        != 0;
     if (engine) {
         engine->repeat_mode = (RepeatMode)s.repeat_mode;
         engine->shuffle     = s.shuffle != 0;
@@ -125,7 +122,6 @@ int ui_init(UIState *ui)
     ui->settings.crossfade           = false;
     ui->settings.crossfade_duration  = 3;
     ui->settings.equalizer_enabled   = false;
-    ui->settings.gif_reactive        = true;
     ui->settings.theme               = 0;
     ui->settings.settings_selected   = 0;
 
@@ -205,17 +201,6 @@ void ui_update(UIState *ui, Visualizer *vis)
             int delay = ct->bg.now_playing.delays_ms[ui->np_bg_frame];
             if (delay <= 0) delay = 100;
 
-            /* Reactive mode: scale playback speed by total audio energy */
-            if (ui->settings.gif_reactive && vis && vis->smoothed_bands) {
-                float energy = 0.0f;
-                for (int i = 0; i < NUM_BANDS; i++)
-                    energy += vis->smoothed_bands[i];
-                /* Normalise: sum of 32 bands at full scale ≈ 800; clamp to 1–5x speed */
-                float speed = 1.0f + (energy / 800.0f) * 4.0f;
-                if (speed > 5.0f) speed = 5.0f;
-                delay = (int)((float)delay / speed);
-                if (delay < 16) delay = 16;  /* cap at ~60fps minimum */
-            }
 
             if ((int)elapsed_ms >= delay) {
                 ui->np_bg_frame = (ui->np_bg_frame + 1) % ct->bg.now_playing.frame_count;
@@ -593,7 +578,7 @@ void ui_handle_input(UIState *ui,
 
     /* ── SETTINGS ─────────────────────────────────────────────────────── */
     case UI_SCREEN_SETTINGS: {
-        const int NUM_SETTINGS = 7;
+        const int NUM_SETTINGS = 6;
         if (nav_pressed & SCE_CTRL_UP) {
             if (ui->settings.settings_selected > 0)
                 ui->settings.settings_selected--;
@@ -603,7 +588,7 @@ void ui_handle_input(UIState *ui,
                 ui->settings.settings_selected++;
         }
         /* Left/right: cycle theme preview when Theme row is selected */
-        if (ui->settings.settings_selected == 5 && ui->theme_mgr && ui->theme_mgr->count > 0) {
+        if (ui->settings.settings_selected == 4 && ui->theme_mgr && ui->theme_mgr->count > 0) {
             if (nav_pressed & SCE_CTRL_LEFT) {
                 ui->settings_theme_preview--;
                 if (ui->settings_theme_preview < 0)
@@ -628,14 +613,13 @@ void ui_handle_input(UIState *ui,
                         engine->crossfade_duration = (float)ui->settings.crossfade_duration;
                     break;
                 case 3: ui->current_screen = UI_SCREEN_EQUALIZER; break;
-                case 4: ui->settings.gif_reactive      = !ui->settings.gif_reactive;      break;
-                case 5:
+                case 4:
                     if (ui->theme_mgr) {
                         theme_manager_select(ui->theme_mgr, ui, ui->settings_theme_preview);
                         theme_manager_save(ui->theme_mgr);
                     }
                     break;
-                case 6:
+                case 5:
                     ((UIState *)ui)->request_exit = true;
                     break;
             }
@@ -2147,11 +2131,10 @@ void ui_draw_settings(const UIState *ui)
         { "Crossfade" },
         { "Crossfade Duration" },
         { "Equalizer" },
-        { "Reactive GIF Background" },
         { "Theme" },
         { "Exit VitaWave" },
     };
-    int num_rows = 7;
+    int num_rows = 6;
 
     int sy = BAR_HEIGHT + 10;
     noto_draw_text(12, sy + 28,
@@ -2185,9 +2168,7 @@ void ui_draw_settings(const UIState *ui)
                 snprintf(val_str, sizeof(val_str), "%s", eq_on ? "ON" : "OFF");
                 break;
             }
-            case 4: snprintf(val_str, sizeof(val_str), "%s",
-                             ui->settings.gif_reactive ? "ON" : "OFF"); break;
-            case 5:
+            case 4:
                 if (ui->theme_mgr && ui->theme_mgr->count > 0) {
                     int preview = ui->settings_theme_preview;
                     if (preview < 0 || preview >= ui->theme_mgr->count)
@@ -2201,7 +2182,7 @@ void ui_draw_settings(const UIState *ui)
                     snprintf(val_str, sizeof(val_str), "Classic Dark");
                 }
                 break;
-            case 6: val_str[0] = '\0'; break;
+            case 5: val_str[0] = '\0'; break;
             default: val_str[0] = '\0'; break;
         }
         {
@@ -2215,9 +2196,9 @@ void ui_draw_settings(const UIState *ui)
         sy += LIST_ROW_HEIGHT;
     }
 
-    if (ui->settings.settings_selected == 5)
+    if (ui->settings.settings_selected == 4)
         draw_footer(ui, "[DUD]Select  [DLR]Theme  [X]Apply  [O]Back");
-    else if (ui->settings.settings_selected == 6)
+    else if (ui->settings.settings_selected == 5)
         draw_footer(ui, "[DUD]Select  [X]Exit  [O]Back");
     else
         draw_footer(ui, "[DUD]Select  [X]Toggle  [O]Back");
