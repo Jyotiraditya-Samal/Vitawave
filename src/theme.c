@@ -43,8 +43,9 @@ static const char *k_default_fonts[THEME_FONT_MAX + 1] = {
 };
 
 /* ── Themes directory ─────────────────────────────────────────────────────── */
-#define THEMES_ROOT   "ux0:data/VitaWave/themes"
-#define CURRENT_THEME "ux0:data/VitaWave/current_theme.txt"
+#define THEMES_ROOT         "ux0:data/VitaWave/themes"  /* user themes  */
+#define BUNDLED_THEMES_ROOT "app0:themes"               /* shipped in VPK */
+#define CURRENT_THEME       "ux0:data/VitaWave/current_theme.txt"
 
 /* ── Tiny INI parser helpers ──────────────────────────────────────────────── */
 
@@ -389,44 +390,41 @@ int theme_manager_init(ThemeManager *mgr)
     mgr->count   = 1;
     mgr->current = 0;
 
-    /* ── Scan ux0:data/VitaWave/themes/ for sub-directories with theme.ini ── */
-    SceUID dd = sceIoDopen(THEMES_ROOT);
-    if (dd < 0) return 0;   /* no themes dir — only Default available */
+    /* ── Scan a themes directory, appending to mgr ──────────────────────── */
+    /* Called twice: bundled themes first (app0:themes), then user themes.   */
+    #define SCAN_THEMES_DIR(root) do { \
+        SceUID _dd = sceIoDopen(root); \
+        if (_dd >= 0) { \
+            SceIoDirent _e; \
+            while (sceIoDread(_dd, &_e) > 0 && mgr->count < THEME_MAX) { \
+                if (_e.d_name[0] == '.') continue; \
+                if (!SCE_S_ISDIR(_e.d_stat.st_mode)) continue; \
+                char _dir[THEME_PATH_MAX]; \
+                snprintf(_dir, sizeof(_dir), "%s/%s", root, _e.d_name); \
+                char _ini[THEME_PATH_MAX]; \
+                snprintf(_ini, sizeof(_ini), "%s/theme.ini", _dir); \
+                if (!file_exists(_ini)) continue; \
+                Theme *_t = &mgr->themes[mgr->count]; \
+                memset(_t, 0, sizeof(*_t)); \
+                _t->colors      = g_palette; \
+                _t->sz_large    = 32; \
+                _t->sz_medium   = 23; \
+                _t->sz_small    = 19; \
+                _t->layout.album_art_size  = 200; \
+                _t->layout.corner_radius   = 12; \
+                _t->layout.list_row_height = 30; \
+                snprintf(_t->name, THEME_NAME_MAX, "%s", _e.d_name); \
+                snprintf(_t->dir,  THEME_PATH_MAX, "%s", _dir); \
+                theme_parse_ini(_t, _dir); \
+                mgr->count++; \
+            } \
+            sceIoDclose(_dd); \
+        } \
+    } while (0)
 
-    SceIoDirent entry;
-    while (sceIoDread(dd, &entry) > 0 && mgr->count < THEME_MAX) {
-        /* skip . and .. */
-        if (entry.d_name[0] == '.') continue;
-        /* must be a directory */
-        if (!SCE_S_ISDIR(entry.d_stat.st_mode)) continue;
-
-        char dir_path[THEME_PATH_MAX];
-        snprintf(dir_path, sizeof(dir_path), "%s/%s", THEMES_ROOT, entry.d_name);
-
-        /* must contain theme.ini */
-        char ini_path[THEME_PATH_MAX];
-        snprintf(ini_path, sizeof(ini_path), "%s/theme.ini", dir_path);
-        if (!file_exists(ini_path)) continue;
-
-        Theme *t = &mgr->themes[mgr->count];
-        memset(t, 0, sizeof(*t));
-        /* default values before parsing ini */
-        t->colors       = g_palette;
-        t->sz_large     = 32;
-        t->sz_medium    = 23;
-        t->sz_small     = 19;
-        t->layout.album_art_size  = 200;
-        t->layout.corner_radius   = 12;
-        t->layout.list_row_height = 30;
-        /* use folder name as placeholder (ini may override with [info] name=) */
-        snprintf(t->name, THEME_NAME_MAX, "%s", entry.d_name);
-        snprintf(t->dir,  THEME_PATH_MAX, "%s", dir_path);
-
-        theme_parse_ini(t, dir_path);
-
-        mgr->count++;
-    }
-    sceIoDclose(dd);
+    SCAN_THEMES_DIR(BUNDLED_THEMES_ROOT);   /* themes shipped in VPK */
+    SCAN_THEMES_DIR(THEMES_ROOT);           /* user-installed themes  */
+    #undef SCAN_THEMES_DIR
 
     return 0;
 }
