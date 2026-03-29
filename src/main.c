@@ -13,6 +13,7 @@
 #include <psp2/apputil.h>
 #include <psp2/ctrl.h>
 #include <psp2/display.h>
+#include <psp2/shellutil.h>
 #include <vita2d.h>
 
 #include "audio_engine.h"
@@ -71,6 +72,17 @@ static void fps_limit(uint64_t frame_start_us)
     }
 }
 
+/* ── Shell event handler ─────────────────────────────────────────────────── */
+/* Called by the OS on lock/unlock events (screen-off, PS button, etc.).
+ * We intentionally do nothing in response — not calling sceShellUtilUnlock
+ * is what keeps audio alive through screen-off and LiveArea navigation.
+ * App exit is handled explicitly via ui->request_exit (Settings → Exit).   */
+static void shell_event_handler(int result, SceShellUtilLockMode mode,
+                                 SceShellUtilLockType type, void *userData)
+{
+    (void)result; (void)mode; (void)type; (void)userData;
+}
+
 /* ── Application entry point ─────────────────────────────────────────────── */
 int main(void)
 {
@@ -95,6 +107,11 @@ int main(void)
     /* ── vita2d init ── */
     vita2d_init();
     vita2d_set_clear_color(COLOR_BG);  /* off-white, matches Apple Music theme */
+
+    /* ── Shell event handler ── */
+    sceShellUtilInitEvents(0);
+    sceShellUtilRegisterEventHandler(shell_event_handler, NULL);
+    sceShellUtilLock(SCE_SHELL_UTIL_LOCK_TYPE_MUSIC_PLAYER);
 
     /* ── Controller ── */
     sceCtrlSetSamplingMode(SCE_CTRL_MODE_ANALOG_WIDE);
@@ -168,7 +185,7 @@ int main(void)
     theme_manager_restore(&g_theme_mgr, &g_ui);
 
     /* ── Main loop ── */
-    while (1) {
+    while (!g_ui.request_exit) {
         uint64_t frame_start = sceKernelGetProcessTimeWide();
 
         /* Handle input */
@@ -206,6 +223,7 @@ cleanup:
     if (g_playlist) playlist_destroy(g_playlist);
     if (g_browser)  file_browser_destroy(g_browser);
     audio_engine_destroy(&g_engine);
+    sceShellUtilUnlock(SCE_SHELL_UTIL_LOCK_TYPE_MUSIC_PLAYER);
     metadata_free(&g_current_meta);
     sceAppUtilMusicUmount();
     vita2d_fini();
