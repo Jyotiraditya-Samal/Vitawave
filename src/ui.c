@@ -201,7 +201,6 @@ void ui_update(UIState *ui, Visualizer *vis)
             int delay = ct->bg.now_playing.delays_ms[ui->np_bg_frame];
             if (delay <= 0) delay = 100;
 
-
             if ((int)elapsed_ms >= delay) {
                 ui->np_bg_frame = (ui->np_bg_frame + 1) % ct->bg.now_playing.frame_count;
                 ui->np_bg_last_tick = now;

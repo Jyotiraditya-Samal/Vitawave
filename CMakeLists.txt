@@ -113,7 +113,7 @@ vita_create_vpk(${PROJECT_NAME}.vpk ${VITA_TITLEID} ${PROJECT_NAME}.self
   FILE assets/fonts/NotoSansJP-Regular.ttf  fonts/NotoSansJP-Regular.ttf
   FILE assets/fonts/NotoSansKR-Regular.ttf  fonts/NotoSansKR-Regular.ttf
   FILE assets/fonts/NotoSansSC-Regular.ttf  fonts/NotoSansSC-Regular.ttf
-  # ── Bundled themes ──────────────────────────────────────────────────────
+  # ── Bundled themes (read directly from app0:themes/) ──────────────────────
   FILE themes/classic-light/theme.ini                       themes/classic-light/theme.ini
   FILE themes/damask/theme.ini                              themes/damask/theme.ini
   FILE themes/damask/bg_default.png                         themes/damask/bg_default.png
