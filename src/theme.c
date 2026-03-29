@@ -43,8 +43,8 @@ static const char *k_default_fonts[THEME_FONT_MAX + 1] = {
 };
 
 /* ── Themes directory ─────────────────────────────────────────────────────── */
-#define THEMES_ROOT         "ux0:data/VitaWave/themes"  /* user themes  */
-#define BUNDLED_THEMES_ROOT "app0:themes"               /* shipped in VPK */
+#define THEMES_ROOT         "ux0:data/VitaWave/themes"  /* user themes        */
+#define BUNDLED_THEMES_ROOT "app0:themes"               /* shipped in VPK     */
 #define CURRENT_THEME       "ux0:data/VitaWave/current_theme.txt"
 
 /* ── Tiny INI parser helpers ──────────────────────────────────────────────── */
@@ -390,8 +390,7 @@ int theme_manager_init(ThemeManager *mgr)
     mgr->count   = 1;
     mgr->current = 0;
 
-    /* ── Scan a themes directory, appending to mgr ──────────────────────── */
-    /* Called twice: bundled themes first (app0:themes), then user themes.   */
+    /* ── Scan bundled themes (app0:themes/) then user themes ─────────────── */
     #define SCAN_THEMES_DIR(root) do { \
         SceUID _dd = sceIoDopen(root); \
         if (_dd >= 0) { \
@@ -422,8 +421,8 @@ int theme_manager_init(ThemeManager *mgr)
         } \
     } while (0)
 
-    SCAN_THEMES_DIR(BUNDLED_THEMES_ROOT);   /* themes shipped in VPK */
-    SCAN_THEMES_DIR(THEMES_ROOT);           /* user-installed themes  */
+    SCAN_THEMES_DIR(BUNDLED_THEMES_ROOT);   /* shipped in VPK    */
+    SCAN_THEMES_DIR(THEMES_ROOT);           /* user-added themes */
     #undef SCAN_THEMES_DIR
 
     return 0;
