@@ -2,6 +2,8 @@
 
 A music player homebrew for the PS Vita. Plays MP3, FLAC, and OGG Vorbis files from `ux0:music/`.
 
+[App Setup & Demo ▶️](https://youtu.be/mYrBEIAUYHQ?si=iwSN9Ks3kBKU0zj4)
+ 
 ## Features
 
 - File browser with directory navigation
